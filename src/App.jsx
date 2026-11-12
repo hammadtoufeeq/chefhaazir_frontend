@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
 import ComingSoon from './pages/ComingSoon'
+import Chefs from './pages/Chefs'
 
 // Each page fades and slides in when the route changes
 const Page = ({ children }) => (
@@ -32,7 +33,7 @@ const App = () => {
                 <AnimatePresence mode="wait">
                     <Routes location={location} key={location.pathname}>
                         <Route path="/" element={<Page><Home /></Page>} />
-                        <Route path="/chefs" element={<Page><ComingSoon title="Find a chef" /></Page>} />
+                        <Route path="/chefs" element={<Page><Chefs /></Page>} />
                         <Route path="/chefs/:id" element={<Page><ComingSoon title="Chef profile" /></Page>} />
                         <Route path="/grocery" element={<Page><ComingSoon title="Grocery store" /></Page>} />
                         <Route path="/about" element={<Page><ComingSoon title="About us" /></Page>} />
