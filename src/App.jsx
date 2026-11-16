@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
 import ComingSoon from './pages/ComingSoon'
+import Chefs from './pages/Chefs'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -14,7 +15,6 @@ const Page = ({ children }) => (
 )
 
 const soon = [
-    ['/chefs', 'Find chefs'],
     ['/chefs/:id', 'Chef profile'],
     ['/book/:chefId', 'Booking request'],
     ['/grocery', 'Grocery store'],
@@ -48,6 +48,7 @@ const App = () => {
                 <AnimatePresence mode="wait">
                     <Routes location={location} key={location.pathname}>
                         <Route path="/" element={<Page><Home /></Page>} />
+                        <Route path="/chefs" element={<Page><Chefs /></Page>} />
                         {soon.map(([path, title]) => (
                             <Route key={path} path={path} element={<Page><ComingSoon title={title} /></Page>} />
                         ))}

@@ -31,7 +31,7 @@ All brand colors live in `src/index.css` under `@theme`: **rust** (brand accent)
 src/
   components/   Navbar, CityPicker, Footer, Logo, ChefCard, SafeImage, Reveal, Icon
   context/      AuthContext (GET /auth/me, logout), CityContext (city picked in the navbar)
-  pages/        Home (done), ComingSoon (placeholder for pages not built yet)
+  pages/        Home, Chefs (done), ComingSoon (placeholder for pages not built yet)
   constants/    cities, cuisines (same lists as the backend), images (free Unsplash photos)
   lib/          api.js (Axios with cookies + automatic token refresh), time.js (Pakistan time, slots)
 ```

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
+import api from '../lib/api'
 import Logo from './Logo'
 import Icon from './Icon'
 import CityPicker from './CityPicker'
@@ -64,6 +66,32 @@ const SearchButton = () => {
     )
 }
 
+// Bell: pending booking requests (customer: waiting for the chef, chef: waiting for you)
+const bellSource = {
+    user: { url: '/bookings/mine', to: '/my-bookings', label: 'requests waiting for the chef' },
+    chef: { url: '/bookings/chef', to: '/chef', label: 'new booking requests' }
+}
+
+const Bell = ({ role }) => {
+    const source = bellSource[role]
+    const { data: count = 0 } = useQuery({
+        queryKey: ['pending-count', role],
+        queryFn: async () => (await api.get(source.url, { params: { status: 'pending', limit: 1 } })).data.pagination.total,
+        enabled: !!source,
+        refetchInterval: 20 * 1000
+    })
+    if (!source) return null
+
+    return (
+        <Link to={source.to} aria-label={`${count} ${source.label}`} title={`${count} ${source.label}`} className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-sand">
+            <Icon name="bell" size={19} />
+            {count > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-cream">{count > 9 ? '9+' : count}</span>
+            )}
+        </Link>
+    )
+}
+
 // Logged-in avatar with a small menu
 const AccountMenu = ({ user, logout }) => {
     const [open, setOpen] = useState(false)
@@ -79,7 +107,7 @@ const AccountMenu = ({ user, logout }) => {
 
     return (
         <div ref={ref} className="relative">
-            <button type="button" onClick={() => setOpen(!open)} aria-label="Account menu" aria-expanded={open} className="flex h-9 w-9 items-center justify-center rounded-full bg-rust text-[13px] font-bold text-white shadow-sm transition hover:bg-rust-dark">
+            <button type="button" onClick={() => setOpen(!open)} aria-label="Account menu" aria-expanded={open} className="flex h-9 w-9 items-center justify-center rounded-full bg-sage-dark text-[12px] font-bold text-white shadow-sm ring-2 ring-sage-soft transition hover:bg-sage">
                 {initials(user.name)}
             </button>
             <AnimatePresence>
@@ -127,10 +155,10 @@ const Navbar = () => {
                     </div>
                 </div>
 
-                <ul className="hidden items-center gap-7 lg:flex">
+                <ul className="hidden items-center gap-6 xl:gap-8 lg:flex">
                     {links.map((link) => (
                         <li key={link.to}>
-                            <NavLink to={link.to} end={link.to === '/'} className={({ isActive }) => `relative block py-2 text-[14px] font-semibold transition-colors hover:text-rust ${isActive ? 'text-rust' : 'text-ink/80'}`}>
+                            <NavLink to={link.to} end={link.to === '/'} className={({ isActive }) => `relative block py-2 text-[14px] transition-colors hover:text-rust ${isActive ? 'font-bold text-rust' : 'font-medium text-ink/75'}`}>
                                 {({ isActive }) => (
                                     <>
                                         {link.label}
@@ -142,23 +170,27 @@ const Navbar = () => {
                     ))}
                 </ul>
 
-                <div className="hidden items-center gap-3 lg:flex">
+                <div className="hidden items-center gap-2 lg:flex">
                     {isLoading ? (
-                        <span className="h-9 w-40 animate-pulse rounded-lg bg-sand" />
+                        <span className="h-10 w-40 animate-pulse rounded-lg bg-sand" />
                     ) : user ? (
                         <>
-                            <Link to={homeFor[user.role]?.to || '/'} className="rounded-lg bg-sage-soft px-4 py-2 text-[13px] font-semibold text-sage transition hover:bg-sage hover:text-white">
+                            <Link to={homeFor[user.role]?.to || '/'} className="rounded-lg bg-sage-soft px-4 py-2.5 text-[13px] font-bold text-sage-dark transition hover:bg-sage hover:text-white">
                                 {homeFor[user.role]?.label}
                             </Link>
+                            <Bell role={user.role} />
                             <AccountMenu user={user} logout={logout} />
                         </>
                     ) : (
                         <>
-                            <Link to="/signup?role=chef" className="rounded-lg bg-sage-soft px-4 py-2 text-[13px] font-semibold text-sage transition hover:bg-sage hover:text-white">
+                            <Link to="/signup?role=chef" className="rounded-lg bg-sage-soft px-4 py-2.5 text-[13px] font-bold text-sage-dark transition hover:bg-sage hover:text-white">
                                 Become a Chef
                             </Link>
-                            <Link to="/login" className="flex items-center gap-1.5 rounded-lg bg-rust px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-rust-dark">
-                                <Icon name="user" size={15} /> Login
+                            <Link to="/login" className="ml-1 flex items-center gap-2 rounded-full py-1 pl-3 pr-1 text-[13px] font-semibold text-ink transition hover:bg-sand">
+                                Log in
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sage-dark text-white ring-2 ring-sage-soft">
+                                    <Icon name="user" size={17} />
+                                </span>
                             </Link>
                         </>
                     )}

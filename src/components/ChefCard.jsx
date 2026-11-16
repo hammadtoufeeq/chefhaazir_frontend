@@ -4,7 +4,8 @@ import SafeImage from './SafeImage'
 import Icon from './Icon'
 import { chefPhoto } from '../constants/images'
 
-const firstName = (name) => name.split(' ')[0]
+// "Book Uncle Tariq" when the name is short, else "Book Shabana"
+const buttonName = (name) => (name.length <= 16 ? name : name.split(' ')[0])
 
 // One chef from GET /api/chefs: { id, name, city, cuisines, ratePerSlot, bio }
 const ChefCard = ({ chef }) => (
@@ -44,7 +45,7 @@ const ChefCard = ({ chef }) => (
                 to={`/chefs/${chef.id}`}
                 className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-sage px-4 py-3 text-[13px] font-semibold text-white transition hover:bg-sage-dark"
             >
-                Book {firstName(chef.name)}
+                Book {buttonName(chef.name)}
                 <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
             </Link>
         </div>

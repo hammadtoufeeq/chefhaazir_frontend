@@ -21,6 +21,9 @@ const paths = {
     menu: <path d="M4 7h16M4 12h16M4 17h10" />,
     close: <path d="M6 6l12 12M18 6 6 18" />,
     logout: <><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="m10 16-4-4 4-4M6 12h10" /></>,
+    bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,
+    filter: <><path d="M4 6h16M7 12h10M10 18h4" /></>,
+    arrowLeft: <path d="M19 12H5m6 6-6-6 6-6" />,
     sparkle: <path d="M12 3.5 13.8 10l6.7 2-6.7 2L12 20.5 10.2 14l-6.7-2 6.7-2L12 3.5Z" />
 }
 
