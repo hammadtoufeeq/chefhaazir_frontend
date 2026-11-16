@@ -22,7 +22,7 @@ const badges = [
 const FlagshipCard = ({ store, isHome }) => (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-card transition hover:shadow-lift lg:row-span-3">
         <div className="relative lg:min-h-72 lg:flex-1">
-            <SafeImage src={images.tableSpread} alt={`${store.name}`} className="h-64 sm:h-72 lg:absolute lg:inset-0 lg:h-full" imgClassName="transition-transform duration-700 group-hover:scale-105" />
+            <SafeImage src={images.spiceBowls} alt={`Spices and daals at ${store.name}`} className="h-64 sm:h-72 lg:absolute lg:inset-0 lg:h-full" imgClassName="transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute left-3 top-3 flex gap-2">
                 <span className="rounded bg-rust px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{isHome ? 'Your city' : 'City store'}</span>
                 <span className="rounded bg-white/90 px-2 py-1 text-[10px] font-bold text-ink">{store.city}</span>
@@ -134,7 +134,7 @@ const Grocery = () => {
 
                 {/* Banner */}
                 <Reveal className="relative mt-8 overflow-hidden rounded-2xl shadow-lift">
-                    <SafeImage src={images.tableSpread} alt="Home cooked dishes made with fresh groceries" eager className="h-72 sm:h-96 lg:h-[420px]" />
+                    <SafeImage src={images.groceryShelves} alt="Shelves of fresh vegetables in a grocery store" eager className="h-72 sm:h-96 lg:h-[420px]" />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
                         <div className="max-w-md text-white">

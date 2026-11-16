@@ -274,7 +274,7 @@ const promises = [
 const GharKaZaiqa = () => (
     <section className="px-4 pb-20 md:px-8 lg:pb-24">
         <Reveal className="mx-auto grid max-w-7xl overflow-hidden rounded-2xl border border-line bg-sand shadow-card lg:grid-cols-2">
-            <SafeImage src={images.biryaniClay} alt="Biryani served in a clay bowl" className="min-h-72 lg:min-h-[460px]" />
+            <SafeImage src={images.curryBowls} alt="Home-style curries served with rice" className="min-h-72 lg:min-h-[460px]" />
             <div className="flex flex-col justify-center p-8 sm:p-12">
                 <p className="eyebrow">Pure ghar ka zaiqa</p>
                 <h2 className="mt-3 font-serif text-4xl leading-tight tracking-tight md:text-[42px]">
