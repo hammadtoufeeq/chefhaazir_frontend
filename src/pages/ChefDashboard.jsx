@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import api, { errorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { chefPhoto, images } from '../constants/images'
@@ -37,6 +38,7 @@ const bookingFilters = [
     ['rejected', 'Declined'], ['expired', 'Expired'], ['cancelled', 'Cancelled'], ['disputed', 'Under review']
 ]
 const money = (amount) => `Rs ${Number(amount || 0).toLocaleString('en-PK')}`
+const fetchChefDashboard = async () => (await api.get('/chefs/me/dashboard')).data
 const dateLabel = (value) => {
     if (!value) return 'Date pending'
     return new Intl.DateTimeFormat('en-PK', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Karachi' })
@@ -72,6 +74,34 @@ const DashboardSections = ({ active }) => (
 )
 
 const Panel = ({ children, className = '' }) => <section className={`rounded-xl border border-line bg-white shadow-card ${className}`}>{children}</section>
+
+const AnimatedNumber = ({ value }) => {
+    const [displayValue, setDisplayValue] = useState(0)
+    const current = useRef(0)
+    useEffect(() => {
+        const target = Number(value) || 0
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            current.current = target
+            setDisplayValue(target)
+            return
+        }
+        const startValue = current.current
+        const startedAt = performance.now()
+        const duration = 850
+        let frame
+        const animate = (now) => {
+            const progress = Math.min((now - startedAt) / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            const next = Math.round(startValue + (target - startValue) * eased)
+            current.current = next
+            setDisplayValue(next)
+            if (progress < 1) frame = requestAnimationFrame(animate)
+        }
+        frame = requestAnimationFrame(animate)
+        return () => cancelAnimationFrame(frame)
+    }, [value])
+    return <>{displayValue.toLocaleString('en-PK')}</>
+}
 
 const ChefPreview = ({ profile }) => (
     <Panel className="overflow-hidden">
@@ -212,7 +242,7 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
         onSuccess: (data) => {
             setNotice(data.message || 'Booking updated.')
             queryClient.invalidateQueries({ queryKey: ['chef-bookings'] })
-            queryClient.invalidateQueries({ queryKey: ['chef-pending-count'] })
+            queryClient.invalidateQueries({ queryKey: ['chef-dashboard-analytics'] })
             queryClient.invalidateQueries({ queryKey: ['chef-earnings'] })
         },
         onError: (error) => setNotice(errorMessage(error))
@@ -268,7 +298,7 @@ const RequestWorkspace = ({ pendingCount }) => {
             const paths = { accept: 'accept', reject: 'reject', complete: 'complete', 'grocery-return': 'grocery-return', cancel: 'cancel' }
             return (await api.patch(`/bookings/${booking._id}/${paths[action]}`, action === 'cancel' ? {} : undefined)).data
         },
-        onSuccess: (data) => { setNotice(data.message || 'Booking updated.'); queryClient.invalidateQueries({ queryKey: ['chef-bookings'] }); queryClient.invalidateQueries({ queryKey: ['chef-pending-count'] }); queryClient.invalidateQueries({ queryKey: ['chef-earnings'] }) },
+        onSuccess: (data) => { setNotice(data.message || 'Booking updated.'); queryClient.invalidateQueries({ queryKey: ['chef-bookings'] }); queryClient.invalidateQueries({ queryKey: ['chef-dashboard-analytics'] }); queryClient.invalidateQueries({ queryKey: ['chef-earnings'] }) },
         onError: (error) => setNotice(errorMessage(error))
     })
     const actions = confirmAction ? {
@@ -436,41 +466,43 @@ const LiveChefOverview = ({ profile, pendingCount }) => {
 }
 
 const ChefAnalyticsOverview = ({ pendingCount }) => {
-    const statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'rejected', 'expired', 'disputed']
-    const results = useQueries({ queries: statuses.map((status) => ({ queryKey: ['chef-bookings', status], queryFn: async () => (await api.get('/bookings/chef', { params: { status, page: 1, limit: 50 } })).data, refetchInterval: status === 'pending' || status === 'confirmed' ? 10_000 : 60_000, refetchOnWindowFocus: true })) })
-    const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
-    const [pending, confirmed, completed, cancelled, rejected, expired, disputed] = results
-    const total = results.reduce((sum, result) => sum + (result.data?.pagination?.total || 0), 0)
+    const dashboard = useQuery({ queryKey: ['chef-dashboard-analytics'], queryFn: fetchChefDashboard, staleTime: 30_000, refetchInterval: 15_000, refetchOnWindowFocus: true })
+    const analytics = dashboard.data?.analytics
+    const counts = analytics?.statusCounts || {}
+    const earnings = dashboard.data?.earnings
+    const upcomingBookings = analytics?.upcomingBookings || []
+    const total = analytics?.totalBookings || 0
     const days = Array.from({ length: 7 }, (_, index) => {
         const date = new Date()
         date.setDate(date.getDate() + index)
         const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(date)
-        const count = [pending, confirmed].reduce((sum, result) => sum + (result.data?.bookings || []).filter((booking) => booking.date === key).length, 0)
+        const count = analytics?.schedule?.find((entry) => entry._id === key)?.count || 0
         return { key, label: new Intl.DateTimeFormat('en-PK', { timeZone: 'Asia/Karachi', weekday: 'short' }).format(date), count }
     })
     const peak = Math.max(1, ...days.map((day) => day.count))
     const stats = [
         ['Total bookings', total, 'calendar', 'text-ink'],
-        ['Awaiting response', pending.data?.pagination?.total ?? pendingCount, 'bell', 'text-rust'],
-        ['Confirmed', confirmed.data?.pagination?.total || 0, 'checkCircle', 'text-sage-dark'],
-        ['Completed', completed.data?.pagination?.total || 0, 'sparkle', 'text-ink']
+        ['Awaiting response', counts.pending ?? pendingCount, 'bell', 'text-rust'],
+        ['Confirmed', counts.confirmed || 0, 'checkCircle', 'text-sage-dark'],
+        ['Completed', counts.completed || 0, 'sparkle', 'text-ink']
     ]
     const statusData = [
-        ['Pending', pending.data?.pagination?.total || 0, 'bg-rust'],
-        ['Confirmed', confirmed.data?.pagination?.total || 0, 'bg-sage'],
-        ['Completed', completed.data?.pagination?.total || 0, 'bg-ink/60'],
-        ['Cancelled / other', (cancelled.data?.pagination?.total || 0) + (rejected.data?.pagination?.total || 0) + (expired.data?.pagination?.total || 0) + (disputed.data?.pagination?.total || 0), 'bg-stone-300']
+        ['Pending', counts.pending || 0, 'bg-rust'],
+        ['Confirmed', counts.confirmed || 0, 'bg-sage'],
+        ['Completed', counts.completed || 0, 'bg-ink/60'],
+        ['Cancelled / other', (counts.cancelled || 0) + (counts.rejected || 0) + (counts.expired || 0) + (counts.disputed || 0), 'bg-stone-300']
     ]
     return <div className="space-y-6">
         <DashboardSections active="overview"/>
         <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-rust">Chef analytics</p><h1 className="mt-1 font-serif text-[34px] font-semibold leading-tight sm:text-[40px]">Kitchen dashboard</h1><p className="mt-1 text-[12px] text-muted">Booking activity and payout overview · updates automatically</p></div>
-        {earnings.data?.summary?.paymentBlocked && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rust/15 bg-rust-soft/60 p-4"><p className="text-[12px] text-rust-dark">Your account has an overdue commission of <strong>{money(earnings.data.summary.totalDue)}</strong>.</p><Link to="/chef/earnings" className="text-[11px] font-bold text-rust underline">View earnings</Link></div>}
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, icon, color]) => <Panel key={label} className="p-5"><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p><Icon name={icon} size={18} className={color}/></div><p className="mt-4 font-serif text-[34px] font-semibold">{results.some((result) => result.isLoading) ? '—' : value}</p></Panel>)}</div>
+        {earnings?.paymentBlocked && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rust/15 bg-rust-soft/60 p-4"><p className="text-[12px] text-rust-dark">Your account has an overdue commission of <strong>{money(earnings.totalDue)}</strong>.</p><Link to="/chef/earnings" className="text-[11px] font-bold text-rust underline">View earnings</Link></div>}
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, icon, color], index) => <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: index * 0.07 }}><Panel className="p-5"><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p><Icon name={icon} size={18} className={color}/></div><p className="mt-4 font-serif text-[34px] font-semibold">{dashboard.isLoading ? '—' : <AnimatedNumber value={value}/>}</p></Panel></motion.div>)}</div>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)]">
-            <Panel className="p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="font-serif text-[21px] font-semibold">Scheduled bookings · next 7 days</h2><p className="mt-1 text-[11px] text-muted">Pending requests and confirmed service dates</p></div><span className="rounded-full bg-stone-100 px-2.5 py-1 text-[9px] font-semibold">Live data</span></div><div className="mt-6 grid h-48 grid-cols-7 items-end gap-2 border-b border-line pb-2">{days.map((day) => <div key={day.key} className="flex h-full flex-col items-center justify-end gap-2"><span className="text-[10px] font-bold text-muted">{day.count || ''}</span><div title={`${day.count} bookings`} className="w-full max-w-10 rounded-t-md bg-sage transition-all" style={{ height: `${Math.max(day.count ? 10 : 3, day.count / peak * 100)}%` }}/><span className="text-[9px] text-muted">{day.label}</span></div>)}</div></Panel>
+            <Panel className="p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="font-serif text-[21px] font-semibold">Scheduled bookings · next 7 days</h2><p className="mt-1 text-[11px] text-muted">Pending requests and confirmed service dates</p></div><span className="rounded-full bg-stone-100 px-2.5 py-1 text-[9px] font-semibold">Live data</span></div><div className="mt-6 grid h-48 grid-cols-7 items-end gap-2 border-b border-line pb-2">{days.map((day, index) => <div key={day.key} className="flex h-full flex-col items-center justify-end gap-2"><span className="text-[10px] font-bold text-muted">{day.count || ''}</span><div className="flex h-full w-full max-w-10 items-end"><motion.div title={`${day.count} bookings`} initial={{ height: 0 }} animate={{ height: `${Math.max(day.count ? 10 : 3, day.count / peak * 100)}%` }} transition={{ duration: 0.75, delay: 0.12 + index * 0.06, ease: [0.22, 1, 0.36, 1] }} className="w-full rounded-t-md bg-sage"/></div><span className="text-[9px] text-muted">{day.label}</span></div>)}</div></Panel>
             <Panel className="p-5 sm:p-6"><h2 className="font-serif text-[21px] font-semibold">Booking status</h2><p className="mt-1 text-[11px] text-muted">All recorded bookings</p><div className="mt-5 flex h-2 overflow-hidden rounded-full bg-stone-100">{statusData.map(([label, value, color]) => <div key={label} className={color} style={{ width: `${total ? value / total * 100 : 0}%` }} title={`${label}: ${value}`}/>)}</div><div className="mt-5 space-y-3">{statusData.map(([label, value, color]) => <div key={label} className="flex items-center justify-between text-[11px]"><span className="flex items-center gap-2 text-muted"><span className={`h-2.5 w-2.5 rounded-sm ${color}`}/>{label}</span><strong>{value}</strong></div>)}</div></Panel>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2"><Panel className="p-5"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Commission currently due</p><p className="mt-2 font-serif text-[28px] font-semibold">{earnings.data ? money(earnings.data.summary.totalDue) : '—'}</p><p className="mt-1 text-[10px] text-muted">From {earnings.data?.summary.payableBookings || 0} payable bookings</p><Link to="/chef/earnings" className="mt-3 inline-flex text-[10px] font-bold text-rust">Open earnings →</Link></Panel><Panel className="p-5"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Next confirmed bookings</p>{confirmed.data?.bookings?.length ? <div className="mt-2 space-y-2">{confirmed.data.bookings.slice(0,3).map((booking) => <div key={booking._id} className="flex items-center justify-between gap-3 border-b border-line py-2 text-[11px] last:border-0"><span className="truncate">{booking.customer?.name || 'Customer'} · {dateLabel(booking.date)}</span><span className="shrink-0 text-muted">{slotLabel(booking.slot)}</span></div>)}</div> : <p className="mt-3 text-[11px] text-muted">No confirmed bookings yet.</p>}<Link to="/chef/bookings" className="mt-2 inline-flex text-[10px] font-bold text-rust">Open bookings →</Link></Panel></div>
+        <div className="grid gap-3 sm:grid-cols-2"><Panel className="p-5"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Commission currently due</p><p className="mt-2 font-serif text-[28px] font-semibold">{earnings ? money(earnings.totalDue) : '—'}</p><p className="mt-1 text-[10px] text-muted">From {earnings?.payableBookings || 0} payable bookings</p><Link to="/chef/earnings" className="mt-3 inline-flex text-[10px] font-bold text-rust">Open earnings →</Link></Panel><Panel className="p-5"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Next confirmed bookings</p>{upcomingBookings.length ? <div className="mt-2 space-y-2">{upcomingBookings.map((booking, index) => <div key={`${booking.date}-${booking.slot}-${index}`} className="flex items-center justify-between gap-3 border-b border-line py-2 text-[11px] last:border-0"><span className="truncate">{booking.customerName || 'Customer'} · {dateLabel(booking.date)}</span><span className="shrink-0 text-muted">{slotLabel(booking.slot)}</span></div>)}</div> : <p className="mt-3 text-[11px] text-muted">No confirmed bookings yet.</p>}<Link to="/chef/bookings" className="mt-2 inline-flex text-[10px] font-bold text-rust">Open bookings →</Link></Panel></div>
+        <div className="flex flex-col gap-4 rounded-xl border border-line bg-stone-100 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sage-dark text-white"><Icon name="chat" size={20}/></span><div><h2 className="font-serif text-[19px]">Need help with your kitchen?</h2><p className="mt-1 text-[11px] text-muted">Contact the partner team about bookings, your schedule, or payouts.</p></div></div><Link to="/chef/contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-sage-dark px-4 py-3 text-[11px] font-bold text-white shadow-sm transition hover:bg-sage focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2"><Icon name="chat" size={14}/> Help &amp; Concierge</Link></div>
     </div>
 }
 
@@ -493,7 +525,7 @@ const ChefDashboard = () => {
     const queryClient = useQueryClient()
     const { user, isLoading: authLoading, logout } = useAuth()
     const profileQuery = useQuery({ queryKey: ['chef-profile'], queryFn: async () => (await api.get('/chefs/me/profile')).data.profile, enabled: user?.role === 'chef', retry: false, refetchInterval: 30_000 })
-    const pendingQuery = useQuery({ queryKey: ['chef-pending-count'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'pending', page: 1, limit: 1 } })).data.pagination.total, enabled: user?.role === 'chef', refetchInterval: 10_000, refetchOnWindowFocus: true })
+    const pendingQuery = useQuery({ queryKey: ['chef-dashboard-analytics'], queryFn: fetchChefDashboard, enabled: user?.role === 'chef', staleTime: 30_000, refetchInterval: 15_000, refetchOnWindowFocus: true, select: (data) => data.analytics?.statusCounts?.pending || 0 })
     const profile = profileQuery.data
     const pathname = location.pathname
     const current = pathname === '/chef' ? 'overview' : pathname.split('/')[2] || 'overview'
@@ -510,7 +542,7 @@ const ChefDashboard = () => {
                 <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between gap-3 px-4 lg:px-7">
                     <Link to="/chef" className="flex min-w-[205px] flex-col border-r border-line pr-5 leading-none"><span className="font-serif text-[22px] font-semibold tracking-tight text-rust">skillet <span className="text-ink">Chef Haazir</span></span><span className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted">Chef portal / Apna kitchen</span></Link>
                     <div className="hidden items-center gap-5 xl:flex">{TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `text-[11px] font-semibold ${isActive ? 'text-rust' : 'text-ink/70 hover:text-ink'}`}>{item.label}</NavLink>)}</div>
-                    <div className="flex items-center gap-2 sm:gap-3"><span className={`hidden rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide sm:inline-flex ${profile?.approvalStatus === 'approved' ? 'bg-sage-soft text-sage-dark' : 'bg-orange-100 text-rust'}`}>{profile?.approvalStatus === 'approved' ? 'Approved chef' : 'Account under setup'}</span><Link to="/chef/contact" className="hidden items-center gap-1.5 rounded-lg bg-stone-100 px-3 py-2 text-[10px] font-semibold sm:flex"><Icon name="chat" size={13}/> Help & Concierge</Link><Link to="/chef/requests" aria-label={`${pendingQuery.data || 0} requests`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-stone-100"><Icon name="bell" size={17}/>{pendingQuery.data > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rust ring-2 ring-white"/>}</Link><div className="hidden text-right sm:block"><p className="max-w-28 truncate text-[10px] font-bold">{profile?.name || user.name}</p><p className="text-[9px] text-muted">Partner chef</p></div><button type="button" onClick={() => { logout(); navigate('/') }} aria-label="Log out" className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15}/></button></div>
+                    <div className="flex items-center gap-2 sm:gap-3"><span className={`hidden rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide sm:inline-flex ${profile?.approvalStatus === 'approved' ? 'bg-sage-soft text-sage-dark' : 'bg-orange-100 text-rust'}`}>{profile?.approvalStatus === 'approved' ? 'Approved chef' : 'Account under setup'}</span><Link to="/chef/contact" aria-label="Help and Concierge" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sage-dark px-2.5 text-[10px] font-bold text-white shadow-sm transition hover:bg-sage focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 sm:px-3"><Icon name="chat" size={14}/><span className="hidden sm:inline">Help &amp; Concierge</span></Link><Link to="/chef/requests" aria-label={`${pendingQuery.data || 0} requests`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-stone-100"><Icon name="bell" size={17}/>{pendingQuery.data > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rust ring-2 ring-white"/>}</Link><div className="hidden text-right sm:block"><p className="max-w-28 truncate text-[10px] font-bold">{profile?.name || user.name}</p><p className="text-[9px] text-muted">Partner chef</p></div><button type="button" onClick={() => { logout(); navigate('/') }} aria-label="Log out" className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15}/></button></div>
                 </div>
                 <div className="flex gap-1 overflow-x-auto border-t border-line px-3 py-2 lg:hidden">{TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold ${isActive ? 'bg-sage-dark text-white' : 'text-muted hover:bg-stone-100'}`}>{item.label}</NavLink>)}</div>
             </header>
