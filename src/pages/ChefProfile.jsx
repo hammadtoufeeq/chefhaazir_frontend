@@ -21,7 +21,7 @@ const slotMood = {
 }
 
 const visitSteps = [
-    { icon: 'pot', title: 'Your note, your menu', text: 'Write what to cook and for how many people (up to 500 characters). The chef cooks it in your kitchen.' },
+    { icon: 'pot', title: 'Your menu request', text: 'Tell the chef which dishes you expect and how many people they should cook for. This is required for every booking.' },
     { icon: 'basket', title: 'Your stove & groceries', text: 'Use what is already at home, or add items from our city store on the booking form. They reach the chef before the slot.' },
     { icon: 'wallet', title: 'Pay after the meal', text: 'A fixed 2-hour price agreed upfront. Pay the chef in cash once the food is ready, including any groceries.' }
 ]

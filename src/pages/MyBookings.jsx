@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { images } from '../constants/images'
 import Icon from '../components/Icon'
 import Pagination from '../components/Pagination'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const PAGE_SIZE = 10
 const CLOSED_STATUSES = ['cancelled', 'rejected', 'expired', 'disputed']
@@ -112,7 +113,9 @@ const BookingDetails = ({ id, onClose }) => {
     const { data, isLoading, isError } = useQuery({
         queryKey: ['booking-detail', id],
         queryFn: async () => (await api.get(`/bookings/${id}`)).data.booking,
-        enabled: !!id
+        enabled: !!id,
+        refetchInterval: filter === 'closed' ? 15_000 : 5_000,
+        refetchOnWindowFocus: true
     })
     const chef = data?.chef
     const phone = chef?.phone?.replace(/[^\d+]/g, '')
@@ -150,33 +153,41 @@ const MyBookings = () => {
     const [page, setPage] = useState(1)
     const [search, setSearch] = useState('')
     const [detailId, setDetailId] = useState(null)
+    const [cancelTarget, setCancelTarget] = useState(null)
     const [notice, setNotice] = useState(location.state?.bookingNotice || '')
 
     const { data, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['my-bookings', filter, page],
         queryFn: () => loadBookings({ filter, page }),
         enabled: user?.role === 'user',
-        placeholderData: (previous) => previous
+        placeholderData: (previous) => previous,
+        refetchInterval: 5_000,
+        refetchOnWindowFocus: true
     })
     const pendingCount = useQuery({
         queryKey: ['my-bookings-count', 'pending'],
         queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', limit: 1 } })).data.pagination.total,
-        enabled: user?.role === 'user'
+        enabled: user?.role === 'user',
+        refetchInterval: 10_000,
+        refetchOnWindowFocus: true
     })
     const confirmedCount = useQuery({
         queryKey: ['my-bookings-count', 'confirmed'],
         queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'confirmed', limit: 1 } })).data.pagination.total,
-        enabled: user?.role === 'user'
+        enabled: user?.role === 'user',
+        refetchInterval: 10_000,
+        refetchOnWindowFocus: true
     })
     const cancelMutation = useMutation({
         mutationFn: ({ id }) => api.patch(`/bookings/${id}/cancel`, {}),
         onSuccess: () => {
             setNotice('Your booking was cancelled.')
+            setCancelTarget(null)
             queryClient.invalidateQueries({ queryKey: ['my-bookings'] })
             queryClient.invalidateQueries({ queryKey: ['my-bookings-count'] })
             queryClient.invalidateQueries({ queryKey: ['pending-count'] })
         },
-        onError: (cancelError) => setNotice(errorMessage(cancelError))
+        onError: (cancelError) => { setNotice(errorMessage(cancelError)); setCancelTarget(null) }
     })
 
     const bookings = data?.bookings || []
@@ -187,10 +198,7 @@ const MyBookings = () => {
     }, [bookings, search])
 
     const changeFilter = (next) => { setFilter(next); setPage(1); setNotice('') }
-    const cancelBooking = (booking) => {
-        const accepted = window.confirm(`Cancel the booking with ${booking.chef?.name || 'your chef'}?`)
-        if (accepted) cancelMutation.mutate({ id: booking._id })
-    }
+    const cancelBooking = (booking) => setCancelTarget(booking)
 
     if (authLoading) return <div className="mx-auto min-h-[50vh] max-w-7xl px-4 py-20"><div className="h-8 w-52 animate-pulse rounded bg-stone-100" /></div>
     if (!user) return (
@@ -241,6 +249,16 @@ const MyBookings = () => {
                 {!isLoading && !isError && visibleBookings.length > 0 && <div className="mt-8 flex flex-col items-center justify-between gap-4 text-[11px] text-muted sm:flex-row"><p>Showing {data?.pagination?.total ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, data?.pagination?.total || 0)} of {data?.pagination?.total || 0} bookings</p><Pagination page={page} totalPages={totalPages} onPage={setPage} className="justify-center sm:mt-0" /></div>}
             </main>
             {detailId && <BookingDetails id={detailId} onClose={() => setDetailId(null)} />}
+            <ConfirmDialog
+                open={!!cancelTarget}
+                title="Cancel this booking?"
+                description={`Cancel your booking with ${cancelTarget?.chef?.name || 'your chef'}? You can cancel up to 90 minutes before the visit starts.`}
+                confirmLabel="Yes, cancel booking"
+                tone="danger"
+                busy={cancelMutation.isPending}
+                onCancel={() => setCancelTarget(null)}
+                onConfirm={() => cancelTarget && cancelMutation.mutate({ id: cancelTarget._id })}
+            />
         </>
     )
 }

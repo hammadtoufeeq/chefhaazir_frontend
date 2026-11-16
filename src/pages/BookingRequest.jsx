@@ -26,6 +26,7 @@ const BookingRequest = () => {
     const [selectedSlot, setSelectedSlot] = useState(searchParams.get('slot') || '')
     const [step, setStep] = useState(1)
     const [note, setNote] = useState('')
+    const [noteTouched, setNoteTouched] = useState(false)
     const [street, setStreet] = useState(user?.address || '')
     const [category, setCategory] = useState('All items')
     const [search, setSearch] = useState('')
@@ -82,6 +83,7 @@ const BookingRequest = () => {
     const checkingPending = user?.role === 'user' && (pendingRequests.isFetching || pendingRequests.isError)
     const currentSlot = !checkingPending && !pendingForSelectedSlot && availability.data?.find((item) => item.slot === selectedSlot && item.status === 'available')
     const isDifferentCity = !!user?.city && !!chef?.city && user.city !== chef.city
+    const noteValid = note.trim().length >= 10
 
     const changeQuantity = (id, value) => setQuantities((current) => {
         const next = { ...current }
@@ -93,12 +95,12 @@ const BookingRequest = () => {
 
     const submitRequest = (event) => {
         event.preventDefault()
-        if (!chef || !currentSlot || !street.trim()) return
+        if (!chef || !currentSlot || !street.trim() || !noteValid) return
         bookMutation.mutate({
             chefId,
             date,
             slot: selectedSlot,
-            note: note.trim() || undefined,
+            note: note.trim(),
             street: street.trim(),
             groceryItems: selectedItems.map((item) => ({ itemId: item._id, quantity: quantities[item._id] }))
         })
@@ -137,9 +139,9 @@ const BookingRequest = () => {
                                 {availability.isError ? <p className="mt-3 rounded-lg bg-rust-soft p-3 text-[12px] text-rust">{errorMessage(availability.error)} <button type="button" onClick={() => availability.refetch()} className="font-bold underline">Retry</button></p> : <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{availability.isLoading ? Array.from({ length: 7 }, (_, index) => <div key={index} className="h-14 animate-pulse rounded-lg bg-stone-100" />) : availability.data?.map((item) => { const pending = hasPendingSlotRequest(pendingRequests.data, chefId, date, item.slot); const isAvailable = item.status === 'available' && !pending && !checkingPending; const active = selectedSlot === item.slot && isAvailable; const label = pending ? 'Your request is pending' : checkingPending ? 'Checking your requests…' : { booked: 'Already booked', too_late: 'Too soon', too_far: 'Too far' }[item.status]; return <button key={item.slot} type="button" disabled={!isAvailable} onClick={() => setSelectedSlot(item.slot)} className={`rounded-lg border px-3 py-2.5 text-left ${active ? 'border-sage-dark bg-sage-dark text-white' : pending ? 'cursor-not-allowed border-amber-200 bg-amber-50 text-amber-900' : isAvailable ? 'border-line hover:border-sage/60' : 'cursor-not-allowed border-transparent bg-stone-50 text-muted/60'}`}><span className="block text-[13px] font-bold">{slotLabel(item.slot)}</span><span className={`block text-[10px] ${active ? 'text-white/75' : pending ? 'text-amber-800' : 'text-muted'}`}>{label || slotMood[item.slot]}</span></button> })}</div>}
                                 {pendingForSelectedSlot && <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-900"><Icon name="clock" size={15} className="mt-0.5 shrink-0"/><span>You already have a pending request for this chef and time. <Link to="/my-bookings" className="font-bold underline">View your request</Link></span></div>}
                             </div>
-                            <div><label htmlFor="booking-note" className="text-[13px] font-bold">What would you like the chef to cook? <span className="font-normal text-muted">(optional)</span></label><textarea id="booking-note" rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Tell the chef about your menu, servings, or preferences…" className="mt-2 w-full resize-y rounded-lg border border-line px-3.5 py-3 text-[13px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/15"/><p className="mt-1 text-right text-[10px] text-muted">{note.length}/500</p></div>
+                            <div><label htmlFor="booking-note" className="text-[13px] font-bold">What would you like the chef to cook? <span className="font-bold text-rust">(required)</span></label><textarea id="booking-note" required minLength={10} rows={3} maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} onBlur={() => setNoteTouched(true)} placeholder="Describe the dishes you expect, servings, and any preferences…" className={`mt-2 w-full resize-y rounded-lg border px-3.5 py-3 text-[13px] outline-none focus:ring-2 focus:ring-sage/15 ${noteTouched && !noteValid ? 'border-rust/60 focus:border-rust' : 'border-line focus:border-sage'}`}/><p className="mt-1 flex justify-between gap-2 text-[10px]"><span className={noteTouched && !noteValid ? 'text-rust' : 'text-muted'}>{noteValid ? 'Your chef will see this menu request.' : 'Describe your expected dishes (at least 10 characters).'}</span><span className="shrink-0 text-muted">{note.length}/500</span></p></div>
                             <div><label htmlFor="booking-address" className="text-[13px] font-bold">Service address in {chef.city}</label>{isDifferentCity && <p className="mt-1 text-[11px] text-muted">This chef serves {chef.city}. Please enter an address in that city.</p>}<textarea id="booking-address" required minLength={10} maxLength={200} rows={2} value={street} onChange={(event) => setStreet(event.target.value)} placeholder="House, street, area, and nearby landmark" className="mt-2 w-full resize-y rounded-lg border border-line px-3.5 py-3 text-[13px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/15"/></div>
-                            <button type="submit" disabled={!currentSlot || !street.trim() || availability.isLoading || checkingPending} className="flex w-full items-center justify-center gap-2 rounded-lg bg-sage-dark py-3.5 text-[14px] font-bold text-white transition hover:bg-sage disabled:cursor-not-allowed disabled:opacity-45">Continue to groceries <Icon name="arrowRight" size={16} /></button>
+                            <button type="submit" disabled={!currentSlot || !street.trim() || !noteValid || availability.isLoading || checkingPending} className="flex w-full items-center justify-center gap-2 rounded-lg bg-sage-dark py-3.5 text-[14px] font-bold text-white transition hover:bg-sage disabled:cursor-not-allowed disabled:opacity-45">Continue to groceries <Icon name="arrowRight" size={16} /></button>
                         </form>
                     ) : (
                         <form onSubmit={submitRequest} className="mt-5 rounded-xl border border-line bg-white p-4 shadow-card sm:p-6">

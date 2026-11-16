@@ -78,7 +78,8 @@ const Bell = ({ role }) => {
         queryKey: ['pending-count', role],
         queryFn: async () => (await api.get(source.url, { params: { status: 'pending', limit: 1 } })).data.pagination.total,
         enabled: !!source,
-        refetchInterval: 20 * 1000
+        refetchInterval: 10 * 1000,
+        refetchOnWindowFocus: true
     })
     if (!source) return null
 

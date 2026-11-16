@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { errorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import { chefPhoto } from '../constants/images'
+import { chefPhoto, images } from '../constants/images'
 import cities from '../constants/cities'
 import cuisines from '../constants/cuisines'
 import { todayInPakistan, addDays, dateParts, slotLabel, SLOTS } from '../lib/time'
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const NAV = [
     { to: '/chef', label: 'Overview', icon: 'sparkle', exact: true },
@@ -87,6 +88,13 @@ const ChefPreview = ({ profile }) => (
 const Onboarding = ({ profile, queryClient }) => {
     const [otp, setOtp] = useState('')
     const [checks, setChecks] = useState({ contract: false, declaration: false })
+    const otpIsActive = profile.otpExpiresAt && new Date(profile.otpExpiresAt).getTime() > Date.now()
+    const requestIsPending = profile.otpRequestedAt && Date.now() - new Date(profile.otpRequestedAt).getTime() < 5 * 60 * 1000
+    const requestMutation = useMutation({
+        mutationFn: () => api.post('/chefs/me/request-otp'),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chef-profile'] }),
+        onError: () => queryClient.invalidateQueries({ queryKey: ['chef-profile'] })
+    })
     const otpMutation = useMutation({
         mutationFn: () => api.post('/chefs/me/verify-otp', { otp }),
         onSuccess: () => { setOtp(''); queryClient.invalidateQueries({ queryKey: ['chef-profile'] }) }
@@ -115,12 +123,16 @@ const Onboarding = ({ profile, queryClient }) => {
                 <div className="space-y-7 p-5 sm:p-7">
                     <div className={`rounded-xl border p-4 sm:p-5 ${profile.phoneVerified ? 'border-sage/20 bg-sage-soft/35' : 'border-rust/15 bg-[#faf8f4]'}`}>
                         <div className="flex flex-wrap items-start justify-between gap-3"><div><span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide ${profile.phoneVerified ? 'bg-sage-dark text-white' : 'bg-rust text-white'}`}>{profile.phoneVerified ? 'Complete' : 'Active step'}</span><h3 className="mt-3 font-serif text-[21px] font-semibold">Verify your phone number</h3><p className="mt-1 text-[12px] leading-relaxed text-muted">Enter the six-digit code sent by the Chef Haazir team to <strong className="text-ink">{profile.phone}</strong>.</p></div><span className="flex items-center gap-1 text-[10px] text-muted"><Icon name="phone" size={13}/> Code sent by support</span></div>
-                        {profile.phoneVerified ? <p className="mt-4 flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-[12px] font-semibold text-sage-dark"><Icon name="checkCircle" size={16}/> Phone verified</p> : <form onSubmit={(event) => { event.preventDefault(); otpMutation.mutate() }} className="mt-4">
+                        {profile.phoneVerified ? <p className="mt-4 flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-[12px] font-semibold text-sage-dark"><Icon name="checkCircle" size={16}/> Phone verified</p> : otpIsActive ? <form onSubmit={(event) => { event.preventDefault(); otpMutation.mutate() }} className="mt-4">
+                            <p className="mb-3 rounded-lg bg-sage-soft/60 px-3 py-2.5 text-[11px] text-sage-dark">The admin generated a code for your phone. Enter the 6-digit code they sent you. It expires at {new Date(profile.otpExpiresAt).toLocaleTimeString('en-PK', { hour: 'numeric', minute: '2-digit' })}.</p>
                             <label htmlFor="chef-otp" className="text-[11px] font-bold text-ink/80">6-digit verification code</label><input id="chef-otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="• • • • • •" className="mt-2 block w-full max-w-[260px] rounded-lg border border-line bg-white px-4 py-3 font-mono text-center text-[22px] font-bold tracking-[0.55em] outline-none focus:border-sage focus:ring-2 focus:ring-sage/15" />
                             {otpMutation.isError && <p role="alert" className="mt-2 text-[11px] text-rust">{errorMessage(otpMutation.error)}</p>}
                             <button type="submit" disabled={otp.length !== 6 || otpMutation.isPending} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-sage-dark px-4 py-2.5 text-[12px] font-bold text-white hover:bg-sage disabled:opacity-50">{otpMutation.isPending ? 'Verifying…' : 'Verify phone'} <Icon name="arrowRight" size={14}/></button>
-                            <p className="mt-3 text-[10px] leading-relaxed text-muted">Codes expire after 10 minutes. Need a new code or changed number? <Link to="/contact" className="font-semibold text-rust underline">Contact our team</Link>.</p>
-                        </form>}
+                            <p className="mt-3 text-[10px] leading-relaxed text-muted">Code expires 10 minutes after it is generated. If you don’t receive it, contact the partner team.</p>
+                        </form> : <div className="mt-4">
+                            {requestIsPending ? <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900"><Icon name="clock" size={15} className="mt-0.5 shrink-0"/><span>Your request was sent to the admin team at {new Date(profile.otpRequestedAt).toLocaleTimeString('en-PK', { hour: 'numeric', minute: '2-digit' })}. They’ll generate and send your code. You can request again after 5 minutes if it hasn’t arrived.</span></div> : <><p className="text-[11px] leading-relaxed text-muted">Ask the admin team to generate a one-time code for <strong className="text-ink">{profile.phone}</strong>. They’ll send it to you so you can verify your number.</p><button type="button" disabled={requestMutation.isPending} onClick={() => requestMutation.mutate()} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-rust px-4 py-2.5 text-[12px] font-bold text-white hover:bg-rust-dark disabled:opacity-50">{requestMutation.isPending ? 'Sending request…' : 'Request OTP from admin'} <Icon name="arrowRight" size={14}/></button></>}
+                            {requestMutation.isError && <p role="alert" className="mt-2 text-[11px] text-rust">{errorMessage(requestMutation.error)}</p>}
+                        </div>}
                     </div>
 
                     <div className={`rounded-xl border p-4 sm:p-5 ${profile.contractAccepted ? 'border-sage/20 bg-sage-soft/35' : profile.phoneVerified ? 'border-line bg-white' : 'border-line bg-stone-50/70 opacity-75'}`}>
@@ -157,7 +169,7 @@ const BookingCard = ({ booking, onAction, busy }) => {
                     <div className="flex flex-wrap items-center gap-2"><h3 className="font-serif text-[20px] font-semibold">{booking.customer?.name || 'Customer'}</h3><StatusPill status={booking.status}/></div>
                     <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted"><span className="inline-flex items-center gap-1"><Icon name="calendar" size={13}/>{dateLabel(booking.date)}</span><span>·</span><span>{slotLabel(booking.slot)}</span><span>·</span><span>{booking.address?.city}</span></p>
                     {booking.address?.street && <p className="mt-2 rounded-md bg-stone-50 px-3 py-2 text-[11px] text-ink/75"><Icon name="pin" size={12} className="mr-1 inline text-sage"/>{booking.address.street}</p>}
-                    {booking.note && <p className="mt-2 text-[12px] leading-relaxed text-ink/80">“{booking.note}”</p>}
+                    {booking.note && <div className="mt-2 rounded-md bg-stone-50 px-3 py-2"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Customer’s menu request</p><p className="mt-1 text-[12px] leading-relaxed text-ink/80">“{booking.note}”</p></div>}
                     {(booking.groceryItems || []).length > 0 && <div className="mt-2 rounded-md bg-sage-soft/50 px-3 py-2 text-[11px]"><p className="font-bold text-sage-dark">Groceries · {booking.groceryStatus?.replaceAll('_', ' ')}</p><p className="mt-0.5 text-ink/75">{booking.groceryItems.map((item) => `${item.name} × ${item.quantity} ${item.unit}`).join(' · ')}</p></div>}
                 </div>
                 <div className="flex shrink-0 flex-row items-center justify-between gap-4 border-t border-line pt-3 sm:flex-col sm:items-end sm:border-0 sm:pt-0"><div className="text-left sm:text-right"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">{isPending ? 'Customer total' : 'Chef fee'}</p><p className="font-serif text-[22px] font-semibold">{money(isPending ? booking.totalFromCustomer : booking.chefRate)}</p><p className="text-[10px] text-muted">{isPending ? 'Cash after service' : '2-hour visit'}</p></div>
@@ -172,10 +184,12 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
     const queryClient = useQueryClient()
     const [status, setStatus] = useState(mode === 'requests' ? 'pending' : 'confirmed')
     const [notice, setNotice] = useState('')
+    const [confirmAction, setConfirmAction] = useState(null)
     const listQuery = useQuery({
         queryKey: ['chef-bookings', status],
         queryFn: async () => (await api.get('/bookings/chef', { params: { status, page: 1, limit: 50 } })).data,
-        refetchInterval: mode === 'requests' && status === 'pending' ? 20_000 : false
+        refetchInterval: mode === 'requests' && status === 'pending' ? 5_000 : 10_000,
+        refetchOnWindowFocus: true
     })
     const actionMutation = useMutation({
         mutationFn: async ({ booking, action }) => {
@@ -193,14 +207,19 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
         },
         onError: (error) => setNotice(errorMessage(error))
     })
-    const onAction = (booking, action) => {
-        const message = action === 'accept' ? `Accept ${booking.customer?.name || 'this customer'}’s booking request?` : action === 'reject' ? 'Decline this booking request?' : action === 'cancel' ? 'Cancel this booking?' : action === 'complete' ? 'Mark this booking completed?' : 'Request that the grocery store take back the delivered items?'
-        if (window.confirm(message)) actionMutation.mutate({ booking, action })
-    }
+    const onAction = (booking, action) => setConfirmAction({ booking, action })
+    const confirmCopy = confirmAction ? {
+        accept: [`Accept ${confirmAction.booking.customer?.name || 'this customer'}’s request?`, 'The customer will see the booking as confirmed. Other pending requests for this same slot will be declined.', 'Accept request'],
+        reject: ['Decline this request?', 'The customer will see that you declined the booking.', 'Decline request'],
+        cancel: ['Cancel this booking?', 'The customer will be notified that the booking was cancelled.', 'Cancel booking'],
+        complete: ['Mark this booking completed?', 'This updates the booking status and starts the settlement process.', 'Mark completed'],
+        'grocery-return': ['Request a grocery return?', 'The store will be asked to verify the groceries returned from this cancelled booking.', 'Request return']
+    }[confirmAction.action] : null
     const label = mode === 'requests' ? 'Requests' : 'Bookings'
     const bookings = listQuery.data?.bookings || []
 
     return (
+        <>
         <div>
             <SectionHeading eyebrow="Kitchen workspace" title={label} text={mode === 'requests' ? 'Review incoming requests and choose the bookings that suit your kitchen.' : 'Keep track of accepted visits and their latest status.'} action={mode === 'requests' && <span className="rounded-full bg-rust-soft px-3 py-1.5 text-[11px] font-bold text-rust">{pendingCount} waiting</span>} />
             <div className="mt-6 flex gap-2 overflow-x-auto pb-2">{bookingFilters.map(([value, title]) => <button key={value} type="button" onClick={() => setStatus(value)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${status === value ? 'border-sage-dark bg-sage-dark text-white' : 'border-line bg-white text-ink/75 hover:border-sage/50'}`}>{title}{value === 'pending' && ` (${pendingCount})`}</button>)}</div>
@@ -210,7 +229,65 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
                     : bookings.length ? <div className="mt-5 space-y-3">{bookings.map((booking) => <BookingCard key={booking._id} booking={booking} onAction={onAction} busy={actionMutation.isPending}/>)}</div>
                         : <Panel className="mt-5 px-5 py-14 text-center"><span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100 text-muted"><Icon name={status === 'pending' ? 'bell' : 'calendar'} size={21}/></span><h2 className="mt-4 font-serif text-2xl">No {status} bookings</h2><p className="mt-2 text-[12px] text-muted">New customer requests will appear here.</p></Panel>}
         </div>
+        <ConfirmDialog
+            open={!!confirmAction}
+            title={confirmCopy?.[0]}
+            description={confirmCopy?.[1]}
+            confirmLabel={confirmCopy?.[2]}
+            tone={['reject', 'cancel'].includes(confirmAction?.action) ? 'danger' : 'sage'}
+            busy={actionMutation.isPending}
+            onCancel={() => setConfirmAction(null)}
+            onConfirm={() => confirmAction && actionMutation.mutate(confirmAction, { onSettled: () => setConfirmAction(null) })}
+        />
+        </>
     )
+}
+
+const RequestWorkspace = ({ pendingCount }) => {
+    const queryClient = useQueryClient()
+    const profile = queryClient.getQueryData(['chef-profile'])
+    const [tab, setTab] = useState('pending')
+    const [notice, setNotice] = useState('')
+    const [confirmAction, setConfirmAction] = useState(null)
+    const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
+    const requests = useQuery({ queryKey: ['chef-bookings', tab], queryFn: async () => (await api.get('/bookings/chef', { params: { status: tab, page: 1, limit: 50 } })).data, refetchInterval: tab === 'pending' ? 5_000 : 10_000, refetchOnWindowFocus: true })
+    const active = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 50 } })).data, refetchInterval: 10_000, refetchOnWindowFocus: true })
+    const mutation = useMutation({
+        mutationFn: async ({ booking, action }) => {
+            const paths = { accept: 'accept', reject: 'reject', complete: 'complete', 'grocery-return': 'grocery-return', cancel: 'cancel' }
+            return (await api.patch(`/bookings/${booking._id}/${paths[action]}`, action === 'cancel' ? {} : undefined)).data
+        },
+        onSuccess: (data) => { setNotice(data.message || 'Booking updated.'); queryClient.invalidateQueries({ queryKey: ['chef-bookings'] }); queryClient.invalidateQueries({ queryKey: ['chef-pending-count'] }); queryClient.invalidateQueries({ queryKey: ['chef-earnings'] }) },
+        onError: (error) => setNotice(errorMessage(error))
+    })
+    const actions = confirmAction ? {
+        accept: [`Accept ${confirmAction.booking.customer?.name || 'this customer'}’s request?`, 'The customer will see the booking as confirmed. Other pending requests for this same slot will be declined.', 'Accept request'],
+        reject: ['Decline this request?', 'The customer will see that you declined the booking.', 'Decline request'],
+        cancel: ['Cancel this booking?', 'The customer will be notified that the booking was cancelled.', 'Cancel booking'],
+        complete: ['Mark this booking completed?', 'This updates the booking status and starts the settlement process.', 'Mark completed'],
+        'grocery-return': ['Request a grocery return?', 'The store will be asked to verify the groceries returned from this cancelled booking.', 'Request return']
+    }[confirmAction.action] : null
+    const bookings = requests.data?.bookings || []
+    const action = (booking, actionName) => setConfirmAction({ booking, action: actionName })
+    const tabs = [['pending', 'Incoming Requests', pendingCount], ['confirmed', 'Upcoming Bookings', active.data?.pagination?.total || 0], ['completed', 'Recent History', null]]
+    return <>
+        {earnings.data?.summary?.paymentBlocked && <div className="mb-6 flex flex-col gap-4 rounded-xl border border-rust/15 bg-[#f4e5da] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rust text-white"><Icon name="wallet" size={19}/></span><div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-rust">Action required · Account hold</p><h2 className="mt-1 font-serif text-[22px]">Your account is paused for an overdue commission</h2><p className="mt-1 text-[12px] text-ink/75">Platform commission of <strong>{money(earnings.data.summary.totalDue)}</strong> is pending. Clear the balance to restore request dispatch.</p></div></div><Link to="/chef/earnings" className="shrink-0 rounded-lg bg-rust px-5 py-3 text-center text-[12px] font-bold text-white hover:bg-rust-dark">View payment details</Link></div>}
+        <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-rust"><Icon name="store" size={15}/> Apna kitchen dispatch terminal</p>
+        <SectionHeading eyebrow="" title="Requests & Active Bookings" text="Review incoming requests and claim each culinary slot before its response window expires." action={<span className="rounded-full bg-rust-soft px-3 py-1.5 text-[11px] font-bold text-rust">{pendingCount} waiting</span>}/>
+        <div className="mt-5 flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl bg-stone-100 p-1">{tabs.map(([key, title, count]) => <button key={key} type="button" onClick={() => setTab(key)} className={`min-w-28 rounded-lg px-4 py-2.5 text-[11px] font-bold ${tab === key ? 'bg-white shadow-sm' : 'text-muted hover:text-ink'}`}>{title}{count !== null && <span className="ml-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px]">{count || 0}</span>}</button>)}</div>
+        {notice && <div role="status" className="mt-4 flex items-center justify-between rounded-lg border border-sage/20 bg-sage-soft px-4 py-3 text-[12px] text-sage-dark">{notice}<button type="button" onClick={() => setNotice('')} aria-label="Dismiss"><Icon name="close" size={15}/></button></div>}
+        <p className="mt-3 text-[12px] text-muted">{tab === 'pending' ? 'Review incoming culinary slots before the response window expires.' : tab === 'confirmed' ? 'Scheduled engagements with active grocery delivery pipelines.' : 'Completed and recently closed customer engagements.'}</p>
+        {requests.isLoading ? <div className="mt-4 grid gap-4 xl:grid-cols-2">{[0,1].map((x) => <div key={x} className="h-72 animate-pulse rounded-xl bg-stone-100"/>)}</div> : requests.isError ? <Panel className="mt-4 p-6 text-center"><p className="text-sm text-rust">{errorMessage(requests.error)}</p><button type="button" onClick={() => requests.refetch()} className="mt-3 text-xs font-bold underline">Try again</button></Panel> : bookings.length ? <div className={`mt-4 grid gap-4 ${tab === 'pending' ? 'xl:grid-cols-2' : ''}`}>{bookings.map((booking) => <BookingCard key={booking._id} booking={booking} onAction={action} busy={mutation.isPending}/>)}</div> : <Panel className="mt-4 px-5 py-12 text-center"><h2 className="font-serif text-2xl">No {tab} bookings</h2><p className="mt-2 text-[12px] text-muted">New customer requests will appear here.</p></Panel>}
+        {tab === 'pending' && <>
+            <div className="mt-8 grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+                <Panel className="overflow-hidden"><div className="grid sm:grid-cols-[35%_1fr]"><SafeImage src={chefPhoto(profile || {})} alt={`${profile?.name || 'Chef'} preparing food`} className="h-56 sm:h-full"/><div className="p-5"><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-rust">Kitchen station status</p><h2 className="mt-1 font-serif text-[25px]">{profile?.name ? `${firstName(profile.name)}’s Kitchen` : 'Your Kitchen'}</h2><p className="mt-2 text-[12px] leading-relaxed text-muted">{profile?.city || 'Your hub'} · {profile?.cuisines?.join(', ') || 'Add your specialties'}.</p><p className="mt-3 font-serif text-[15px] italic text-ink/75">{profile?.bio || 'Your cooking bio will appear here for customers.'}</p><div className="mt-5 grid grid-cols-2 gap-2"><div className="rounded-lg bg-stone-100 p-3"><p className="text-[9px] font-bold uppercase text-muted">Requests waiting</p><p className="mt-1 font-serif text-xl">{pendingCount}</p></div><div className="rounded-lg bg-stone-100 p-3"><p className="text-[9px] font-bold uppercase text-muted">Chef rate</p><p className="mt-1 font-serif text-xl">{money(profile?.ratePerSlot)}</p></div></div><Link to="/chef/profile" className="mt-4 inline-flex text-[11px] font-bold text-rust underline">Edit kitchen profile →</Link></div></div></Panel>
+                <Panel className="overflow-hidden"><SafeImage src={chefPhoto(profile || {})} alt="Chef specialty" className="h-40"/><div className="p-4"><p className="text-[9px] font-bold uppercase tracking-wide text-rust">Culinary focus</p><h3 className="mt-1 font-serif text-xl">{profile?.cuisines?.[0] || 'Your signature cuisine'}</h3><p className="mt-2 text-[11px] leading-relaxed text-muted">Keep your specialties and menu details current so customers know what to request.</p><Link to="/chef/profile" className="mt-5 inline-flex text-[11px] font-bold text-rust">Update specialties →</Link></div></Panel>
+            </div>
+            <div className="mt-8 flex items-end justify-between gap-3"><div><h2 className="font-serif text-[25px]">Confirmed Kitchen Bookings</h2><p className="text-[11px] text-muted">Your accepted engagements and grocery dispatch progress.</p></div><span className="rounded-full bg-stone-100 px-3 py-1.5 text-[10px] font-bold">{active.data?.pagination?.total || 0} active</span></div>
+            {(active.data?.bookings || []).length ? <div className="mt-3 space-y-3">{active.data.bookings.slice(0,3).map((booking) => <BookingCard key={booking._id} booking={booking} onAction={action} busy={mutation.isPending}/>)}</div> : <Panel className="mt-3 p-5 text-[12px] text-muted">Accepted bookings will appear here, with customer details and grocery delivery status.</Panel>}
+        </>}
+        <ConfirmDialog open={!!confirmAction} title={actions?.[0]} description={actions?.[1]} confirmLabel={actions?.[2]} tone={['reject','cancel'].includes(confirmAction?.action) ? 'danger' : 'sage'} busy={mutation.isPending} onCancel={() => setConfirmAction(null)} onConfirm={() => confirmAction && mutation.mutate(confirmAction, { onSettled: () => setConfirmAction(null) })}/>
+    </>
 }
 
 const Earnings = () => {
@@ -295,7 +372,66 @@ const KitchenTimings = ({ profile }) => {
     </div>
 }
 
-const Overview = ({ profile, queryClient, pendingCount, navigate }) => (
+const LiveChefOverview = ({ profile, pendingCount }) => {
+    const confirmed = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 5 } })).data, refetchInterval: 10_000, refetchOnWindowFocus: true })
+    const completed = useQuery({ queryKey: ['chef-bookings', 'completed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'completed', page: 1, limit: 1 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
+    const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
+    const grocery = useQuery({ queryKey: ['grocery', 'chef-overview', profile.city], queryFn: async () => (await api.get('/grocery/items', { params: { city: profile.city, page: 1, limit: 4 } })).data, enabled: !!profile.city })
+    const items = grocery.data?.items || []
+    const activeBookings = confirmed.data?.bookings || []
+    return <div className="space-y-7">
+        {earnings.data?.summary?.paymentBlocked && <div className="flex flex-col gap-4 rounded-xl border border-rust/15 bg-[#f4e5da] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rust text-white"><Icon name="wallet" size={19}/></span><div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-rust">Action required · Account hold</p><h2 className="mt-1 font-serif text-[21px]">Your account is paused for an overdue commission</h2><p className="mt-1 text-[12px] text-ink/75">Platform commission of <strong>{money(earnings.data.summary.totalDue)}</strong> is pending.</p></div></div><Link to="/chef/earnings" className="shrink-0 rounded-lg bg-rust px-5 py-3 text-center text-[12px] font-bold text-white">View earnings</Link></div>}
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-rust"><Icon name="store" size={14}/> Chef Haazir · Partner Kitchen</p><h1 className="mt-2 font-serif text-[34px] font-semibold leading-tight sm:text-[42px]">{profile.name} <span className="text-rust">Kitchen</span></h1><p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted"><Icon name="pin" size={13}/>{profile.city} <span>·</span><span>{profile.cuisines?.join(' · ') || 'Home chef'}</span><span>·</span><span className="font-semibold text-sage-dark">Verified chef · accepting requests</span></p></div><div className="flex gap-1 rounded-xl bg-stone-100 p-1"><Link to="/chef" className="rounded-lg bg-white px-4 py-2 text-[11px] font-bold text-rust shadow-sm">Overview</Link><Link to="/chef/requests" className="rounded-lg px-4 py-2 text-[11px] font-semibold">Requests <span className="ml-1 rounded-full bg-rust px-1.5 py-0.5 text-[9px] text-white">{pendingCount}</span></Link><Link to="/chef/bookings" className="rounded-lg px-4 py-2 text-[11px] font-semibold">Bookings</Link></div></div>
+        <Panel className="flex flex-col gap-4 border-sage/20 bg-sage-soft/35 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-dark text-white"><Icon name="checkCircle" size={20}/></span><div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-sage-dark">Kitchen verification complete</p><h2 className="mt-1 font-serif text-xl">Your chef profile is live</h2><p className="mt-1 text-[11px] text-muted">Customers can find your kitchen and send booking requests. New requests update here automatically.</p></div></div><Link to="/chef/profile" className="shrink-0 rounded-lg border border-line bg-white px-4 py-2.5 text-[11px] font-bold">Manage profile</Link></Panel>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">New requests</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{pendingCount}</p><Icon name="bell" size={20} className="text-rust"/></div><Link to="/chef/requests" className="mt-2 inline-block text-[10px] font-bold text-rust">Review requests →</Link></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Active bookings</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{confirmed.data?.pagination?.total ?? '—'}</p><Icon name="calendar" size={20} className="text-sage"/></div><Link to="/chef/bookings" className="mt-2 inline-block text-[10px] font-bold text-rust">View schedule →</Link></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Completed visits</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{completed.data?.pagination?.total ?? '—'}</p><Icon name="checkCircle" size={20} className="text-sage"/></div><span className="mt-2 inline-block text-[10px] text-muted">Since joining Chef Haazir</span></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Commission due</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[27px] font-semibold">{earnings.data ? money(earnings.data.summary.totalDue) : '—'}</p><Icon name="wallet" size={20} className="text-rust"/></div><Link to="/chef/earnings" className="mt-2 inline-block text-[10px] font-bold text-rust">Earnings details →</Link></Panel></div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <Panel className="overflow-hidden"><div className="grid sm:grid-cols-[42%_1fr]"><SafeImage src={chefPhoto(profile)} alt={`${profile.name} cuisine`} className="h-64 sm:h-full"/><div className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-rust">Your kitchen</p><h2 className="mt-1 font-serif text-[25px]">{profile.name}</h2><p className="mt-2 text-[12px] leading-relaxed text-muted">{profile.city} · serving local homes with {profile.cuisines?.join(', ') || 'home cooked meals'}.</p><blockquote className="mt-4 rounded-lg bg-stone-50 p-3 font-serif text-[14px] italic leading-relaxed text-ink/75">{profile.bio || 'Add a short introduction to tell customers about your cooking.'}</blockquote><Link to="/chef/profile" className="mt-4 inline-flex text-[11px] font-bold text-rust">Edit profile details →</Link></div></div></Panel>
+            <section><div className="flex items-end justify-between gap-3"><div><p className="text-[9px] font-bold uppercase tracking-wide text-rust">Local grocery supply</p><h2 className="font-serif text-[24px]">Pantry picks in {profile.city}</h2><p className="text-[11px] text-muted">Items customers can add to a chef booking.</p></div><Link to={`/grocery/${encodeURIComponent(profile.city || '')}`} className="shrink-0 text-[10px] font-bold text-rust">Browse store →</Link></div>{grocery.isLoading ? <div className="mt-3 grid gap-3 sm:grid-cols-2">{[0,1,2,3].map((x)=><div key={x} className="h-24 animate-pulse rounded-xl bg-stone-100"/>)}</div> : items.length ? <div className="mt-3 grid gap-3 sm:grid-cols-2">{items.map((item) => <Panel key={item._id} className="flex min-w-0 items-center gap-3 p-3"><SafeImage src={images.spices} alt={item.name} className="h-16 w-16 shrink-0 rounded-lg"/><div className="min-w-0"><p className="truncate text-[9px] font-bold uppercase text-rust">{item.category}</p><p className="truncate text-[12px] font-semibold">{item.name}</p><p className="mt-1 text-[11px] font-bold text-sage-dark">{money(item.price)} / {item.unit}</p></div></Panel>)}</div> : <Panel className="mt-3 p-5 text-[11px] text-muted">No approved grocery store is serving {profile.city} yet. Customers can still book you without groceries.</Panel>}</section>
+        </div>
+        <section><div className="flex items-end justify-between gap-3"><div><h2 className="font-serif text-[25px]">Your upcoming kitchen bookings</h2><p className="text-[11px] text-muted">Confirmed visits and grocery delivery status.</p></div><Link to="/chef/bookings" className="text-[11px] font-bold text-rust">All bookings →</Link></div>{confirmed.isLoading ? <div className="mt-3 h-28 animate-pulse rounded-xl bg-stone-100"/> : activeBookings.length ? <div className="mt-3 grid gap-3 lg:grid-cols-2">{activeBookings.slice(0,4).map((booking) => <article key={booking._id} className="rounded-xl border border-line bg-white p-4 shadow-card"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-serif text-lg font-semibold">{booking.customer?.name || 'Customer'}</h3><StatusPill status={booking.status}/></div><p className="mt-1 text-[11px] text-muted">{dateLabel(booking.date)} · {slotLabel(booking.slot)} · {booking.address?.city}</p>{booking.note && <p className="mt-3 rounded-lg bg-stone-50 p-3 font-serif text-[13px] italic">{booking.note}</p>}<p className="mt-3 text-[10px] text-muted">Groceries: {booking.groceryStatus?.replaceAll('_', ' ') || 'not selected'}</p></article>)}</div> : <Panel className="mt-3 p-5 text-[12px] text-muted">No confirmed bookings yet. New requests will appear in your Requests tab.</Panel>}</section>
+        <div className="flex flex-col gap-4 rounded-xl bg-stone-100 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-serif text-xl">Need help with your kitchen?</h2><p className="mt-1 text-[11px] text-muted">Your partner support team is ready to help.</p></div><Link to="/contact" className="rounded-lg bg-sage-dark px-4 py-2.5 text-center text-[11px] font-bold text-white">Contact partner support</Link></div>
+    </div>
+}
+
+const ChefAnalyticsOverview = ({ pendingCount }) => {
+    const statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'rejected', 'expired', 'disputed']
+    const results = useQueries({ queries: statuses.map((status) => ({ queryKey: ['chef-bookings', status], queryFn: async () => (await api.get('/bookings/chef', { params: { status, page: 1, limit: 50 } })).data, refetchInterval: status === 'pending' || status === 'confirmed' ? 10_000 : 60_000, refetchOnWindowFocus: true })) })
+    const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
+    const [pending, confirmed, completed, cancelled, rejected, expired, disputed] = results
+    const total = results.reduce((sum, result) => sum + (result.data?.pagination?.total || 0), 0)
+    const days = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date()
+        date.setDate(date.getDate() + index)
+        const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(date)
+        const count = [pending, confirmed].reduce((sum, result) => sum + (result.data?.bookings || []).filter((booking) => booking.date === key).length, 0)
+        return { key, label: new Intl.DateTimeFormat('en-PK', { timeZone: 'Asia/Karachi', weekday: 'short' }).format(date), count }
+    })
+    const peak = Math.max(1, ...days.map((day) => day.count))
+    const stats = [
+        ['Total bookings', total, 'calendar', 'text-ink'],
+        ['Awaiting response', pending.data?.pagination?.total ?? pendingCount, 'bell', 'text-rust'],
+        ['Confirmed', confirmed.data?.pagination?.total || 0, 'checkCircle', 'text-sage-dark'],
+        ['Completed', completed.data?.pagination?.total || 0, 'sparkle', 'text-ink']
+    ]
+    const statusData = [
+        ['Pending', pending.data?.pagination?.total || 0, 'bg-rust'],
+        ['Confirmed', confirmed.data?.pagination?.total || 0, 'bg-sage'],
+        ['Completed', completed.data?.pagination?.total || 0, 'bg-ink/60'],
+        ['Cancelled / other', (cancelled.data?.pagination?.total || 0) + (rejected.data?.pagination?.total || 0) + (expired.data?.pagination?.total || 0) + (disputed.data?.pagination?.total || 0), 'bg-stone-300']
+    ]
+    return <div className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-rust">Chef analytics</p><h1 className="mt-1 font-serif text-[34px] font-semibold leading-tight sm:text-[40px]">Kitchen dashboard</h1><p className="mt-1 text-[12px] text-muted">Booking activity and payout overview · updates automatically</p></div><Link to="/chef/requests" className="rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white">Review {pendingCount} requests</Link></div>
+        {earnings.data?.summary?.paymentBlocked && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rust/15 bg-rust-soft/60 p-4"><p className="text-[12px] text-rust-dark">Your account has an overdue commission of <strong>{money(earnings.data.summary.totalDue)}</strong>.</p><Link to="/chef/earnings" className="text-[11px] font-bold text-rust underline">View earnings</Link></div>}
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, icon, color]) => <Panel key={label} className="p-5"><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p><Icon name={icon} size={18} className={color}/></div><p className="mt-4 font-serif text-[34px] font-semibold">{results.some((result) => result.isLoading) ? '—' : value}</p></Panel>)}</div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)]">
+            <Panel className="p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="font-serif text-[21px] font-semibold">Scheduled bookings · next 7 days</h2><p className="mt-1 text-[11px] text-muted">Pending requests and confirmed service dates</p></div><span className="rounded-full bg-stone-100 px-2.5 py-1 text-[9px] font-semibold">Live data</span></div><div className="mt-6 grid h-48 grid-cols-7 items-end gap-2 border-b border-line pb-2">{days.map((day) => <div key={day.key} className="flex h-full flex-col items-center justify-end gap-2"><span className="text-[10px] font-bold text-muted">{day.count || ''}</span><div title={`${day.count} bookings`} className="w-full max-w-10 rounded-t-md bg-sage transition-all" style={{ height: `${Math.max(day.count ? 10 : 3, day.count / peak * 100)}%` }}/><span className="text-[9px] text-muted">{day.label}</span></div>)}</div></Panel>
+            <Panel className="p-5 sm:p-6"><h2 className="font-serif text-[21px] font-semibold">Booking status</h2><p className="mt-1 text-[11px] text-muted">All recorded bookings</p><div className="mt-5 flex h-2 overflow-hidden rounded-full bg-stone-100">{statusData.map(([label, value, color]) => <div key={label} className={color} style={{ width: `${total ? value / total * 100 : 0}%` }} title={`${label}: ${value}`}/>)}</div><div className="mt-5 space-y-3">{statusData.map(([label, value, color]) => <div key={label} className="flex items-center justify-between text-[11px]"><span className="flex items-center gap-2 text-muted"><span className={`h-2.5 w-2.5 rounded-sm ${color}`}/>{label}</span><strong>{value}</strong></div>)}</div></Panel>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2"><Panel className="p-5"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Commission currently due</p><p className="mt-2 font-serif text-[28px] font-semibold">{earnings.data ? money(earnings.data.summary.totalDue) : '—'}</p><p className="mt-1 text-[10px] text-muted">From {earnings.data?.summary.payableBookings || 0} payable bookings</p><Link to="/chef/earnings" className="mt-3 inline-flex text-[10px] font-bold text-rust">Open earnings →</Link></Panel><Panel className="p-5"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Next confirmed bookings</p>{confirmed.data?.bookings?.length ? <div className="mt-2 space-y-2">{confirmed.data.bookings.slice(0,3).map((booking) => <div key={booking._id} className="flex items-center justify-between gap-3 border-b border-line py-2 text-[11px] last:border-0"><span className="truncate">{booking.customer?.name || 'Customer'} · {dateLabel(booking.date)}</span><span className="shrink-0 text-muted">{slotLabel(booking.slot)}</span></div>)}</div> : <p className="mt-3 text-[11px] text-muted">No confirmed bookings yet.</p>}<Link to="/chef/bookings" className="mt-2 inline-flex text-[10px] font-bold text-rust">Open bookings →</Link></Panel></div>
+    </div>
+}
+
+const Overview = ({ profile, queryClient, pendingCount, navigate }) => profile.approvalStatus === 'approved' ? <ChefAnalyticsOverview pendingCount={pendingCount}/> : (
     <div>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4"><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-rust"><Icon name="shield" size={14}/> {profile.city} partner kitchen</p><span className="rounded-lg bg-stone-100 px-3 py-2 text-[10px] text-muted">Account stage · <strong className="text-ink">{profile.approvalStatus === 'approved' ? 'Live' : profile.phoneVerified ? profile.contractAccepted ? '3 · Review' : '2 · Agreement' : '1 · Verification'}</strong></span></div>
         <h1 className="font-serif text-[40px] font-semibold leading-[1.04] tracking-tight sm:text-[52px]">Salaam, {firstName(profile.name)}</h1>
@@ -313,8 +449,8 @@ const ChefDashboard = () => {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
     const { user, isLoading: authLoading, logout } = useAuth()
-    const profileQuery = useQuery({ queryKey: ['chef-profile'], queryFn: async () => (await api.get('/chefs/me/profile')).data.profile, enabled: user?.role === 'chef', retry: false })
-    const pendingQuery = useQuery({ queryKey: ['chef-pending-count'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'pending', page: 1, limit: 1 } })).data.pagination.total, enabled: user?.role === 'chef', refetchInterval: 20_000 })
+    const profileQuery = useQuery({ queryKey: ['chef-profile'], queryFn: async () => (await api.get('/chefs/me/profile')).data.profile, enabled: user?.role === 'chef', retry: false, refetchInterval: 30_000 })
+    const pendingQuery = useQuery({ queryKey: ['chef-pending-count'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'pending', page: 1, limit: 1 } })).data.pagination.total, enabled: user?.role === 'chef', refetchInterval: 10_000, refetchOnWindowFocus: true })
     const profile = profileQuery.data
     const pathname = location.pathname
     const current = pathname === '/chef' ? 'overview' : pathname.split('/')[2] || 'overview'
@@ -323,7 +459,7 @@ const ChefDashboard = () => {
     if (!user) return <Navigate to="/login?next=%2Fchef" replace/>
     if (user.role !== 'chef') return <Navigate to={user.role === 'user' ? '/my-bookings' : '/'} replace/>
 
-    const page = current === 'requests' || current === 'bookings' ? <BookingWorkspace mode={current} pendingCount={pendingQuery.data || 0}/> : current === 'earnings' ? <Earnings/> : current === 'profile' ? profile && <ProfileEditor profile={profile} queryClient={queryClient}/> : current === 'timings' ? profile && <KitchenTimings profile={profile}/> : profile && <Overview profile={profile} queryClient={queryClient} pendingCount={pendingQuery.data || 0} navigate={navigate}/>
+    const page = current === 'requests' ? <RequestWorkspace pendingCount={pendingQuery.data || 0}/> : current === 'bookings' ? <BookingWorkspace mode="bookings" pendingCount={pendingQuery.data || 0}/> : current === 'earnings' ? <Earnings/> : current === 'profile' ? profile && <ProfileEditor profile={profile} queryClient={queryClient}/> : current === 'timings' ? profile && <KitchenTimings profile={profile}/> : profile && <Overview profile={profile} queryClient={queryClient} pendingCount={pendingQuery.data || 0} navigate={navigate}/>
 
     return (
         <div className="min-h-screen bg-[#fbfaf8] text-ink">

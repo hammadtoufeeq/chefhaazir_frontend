@@ -16,6 +16,7 @@ import Login from './pages/Login'
 import MyBookings from './pages/MyBookings'
 import BookingRequest from './pages/BookingRequest'
 import ChefDashboard from './pages/ChefDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -25,9 +26,7 @@ const Page = ({ children }) => (
 )
 
 const soon = [
-    ['/chef', 'Chef dashboard'],
     ['/store', 'Store dashboard'],
-    ['/admin', 'Admin dashboard']
 ]
 
 const App = () => {
@@ -43,6 +42,7 @@ const App = () => {
     }, [location.pathname, location.hash])
 
     if (location.pathname === '/chef' || location.pathname.startsWith('/chef/')) return <ChefDashboard />
+    if (location.pathname === '/admin') return <AdminDashboard />
 
     // Sign-up and login have their own quiet layout, without the main navbar and footer
     if (location.pathname === '/signup') return <div className="overflow-x-clip"><Signup /></div>
