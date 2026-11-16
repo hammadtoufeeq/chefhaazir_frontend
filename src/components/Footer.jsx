@@ -1,38 +1,95 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
+import Icon from './Icon'
+import cities from '../constants/cities'
+import { useCity } from '../context/CityContext'
 
-const Footer = () => (
-    <footer className="bg-dhania-dark text-cream">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-4 md:px-8">
-            <div className="md:col-span-2">
-                <Logo light />
-                <p className="mt-4 max-w-sm text-cream/75">
-                    Verified home chefs who cook in your kitchen, with groceries from our own store in your city.
-                </p>
-                <p dir="rtl" lang="ur" className="mt-6 text-left font-urdu text-xl leading-loose text-haldi">گھر سے دور، گھر کا کھانا</p>
+const columns = [
+    {
+        title: 'Explore',
+        links: [
+            { to: '/chefs', label: 'Find home chefs' },
+            { to: '/grocery', label: 'Grocery store' },
+            { to: '/#how-it-works', label: 'How it works' },
+            { to: '/my-bookings', label: 'My bookings' }
+        ]
+    },
+    {
+        title: 'Partners',
+        links: [
+            { to: '/signup?role=chef', label: 'Join as a chef' },
+            { to: '/signup?role=grocery_owner', label: 'Run a city grocery store' },
+            { to: '/about#chef-contract', label: 'Chef contract & perks' },
+            { to: '/login', label: 'Partner login' }
+        ]
+    },
+    {
+        title: 'Company',
+        links: [
+            { to: '/about', label: 'About us' },
+            { to: '/contact', label: 'Contact' }
+        ]
+    }
+]
+
+const badges = [
+    { icon: 'phone', label: 'Phone verified' },
+    { icon: 'shield', label: 'Admin approved' },
+    { icon: 'wallet', label: 'Cash on service' }
+]
+
+const Footer = () => {
+    const { setCity } = useCity()
+
+    return (
+        <footer className="border-t border-line bg-cream">
+            <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:px-8 lg:grid-cols-[1.4fr_1fr_1fr_0.8fr_1.2fr]">
+                <div>
+                    <Logo />
+                    <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted">
+                        Book a verified home chef for a 2-hour slot in your own kitchen. Groceries come from our city store and arrive with the chef.
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                        {badges.map((b) => (
+                            <span key={b.label} className="flex items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[11px] font-semibold text-ink/80">
+                                <Icon name={b.icon} size={13} className="text-sage" /> {b.label}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                {columns.map((col) => (
+                    <div key={col.title}>
+                        <h3 className="text-[13px] font-bold text-ink">{col.title}</h3>
+                        <ul className="mt-4 space-y-2.5">
+                            {col.links.map((l) => (
+                                <li key={l.label}>
+                                    <Link to={l.to} className="text-[13px] text-muted transition hover:text-rust">{l.label}</Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+
+                <div>
+                    <h3 className="text-[13px] font-bold text-ink">Our cities</h3>
+                    <ul className="mt-4 flex flex-wrap gap-x-3 gap-y-2">
+                        {cities.map((c) => (
+                            <li key={c}>
+                                <Link to={`/chefs?city=${encodeURIComponent(c)}`} onClick={() => setCity(c)} className="text-[13px] text-muted transition hover:text-rust">{c}</Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </div>
-            <div>
-                <h3 className="font-serif text-lg">Explore</h3>
-                <ul className="mt-4 space-y-2 text-cream/75">
-                    <li><Link to="/chefs" className="transition hover:text-haldi">Find a chef</Link></li>
-                    <li><Link to="/grocery" className="transition hover:text-haldi">Grocery store</Link></li>
-                    <li><Link to="/about" className="transition hover:text-haldi">About us</Link></li>
-                    <li><Link to="/contact" className="transition hover:text-haldi">Contact</Link></li>
-                </ul>
+            <div className="border-t border-line">
+                <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-[12px] text-muted md:flex-row md:items-center md:justify-between md:px-8">
+                    <p>© {new Date().getFullYear()} Chef Haazir. Ghar se door, ghar ka khana.</p>
+                    <p>All prices in PKR · Pay the chef in cash after the meal</p>
+                </div>
             </div>
-            <div>
-                <h3 className="font-serif text-lg">Join us</h3>
-                <ul className="mt-4 space-y-2 text-cream/75">
-                    <li><Link to="/signup?role=chef" className="transition hover:text-haldi">Cook with Chef Haazir</Link></li>
-                    <li><Link to="/signup?role=grocery_owner" className="transition hover:text-haldi">Run a city store</Link></li>
-                    <li><Link to="/signup" className="transition hover:text-haldi">Create an account</Link></li>
-                </ul>
-            </div>
-        </div>
-        <div className="border-t border-cream/10">
-            <p className="mx-auto max-w-7xl px-5 py-5 text-sm text-cream/60 md:px-8">© {new Date().getFullYear()} Chef Haazir. Made in Pakistan.</p>
-        </div>
-    </footer>
-)
+        </footer>
+    )
+}
 
 export default Footer

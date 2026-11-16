@@ -5,27 +5,41 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
 import ComingSoon from './pages/ComingSoon'
-import Chefs from './pages/Chefs'
-import ChefProfile from './pages/ChefProfile'
 
-// Each page fades and slides in when the route changes
+// Each page fades in when the route changes
 const Page = ({ children }) => (
-    <motion.main
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-    >
+    <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
         {children}
     </motion.main>
 )
 
+const soon = [
+    ['/chefs', 'Find chefs'],
+    ['/chefs/:id', 'Chef profile'],
+    ['/book/:chefId', 'Booking request'],
+    ['/grocery', 'Grocery store'],
+    ['/grocery/:city', 'Grocery store'],
+    ['/about', 'About us'],
+    ['/contact', 'Contact'],
+    ['/login', 'Login'],
+    ['/signup', 'Sign up'],
+    ['/my-bookings', 'My bookings'],
+    ['/chef', 'Chef dashboard'],
+    ['/store', 'Store dashboard'],
+    ['/admin', 'Admin dashboard']
+]
+
 const App = () => {
     const location = useLocation()
 
+    // New page starts at the top; links like /#how-it-works scroll to that section
     useEffect(() => {
+        if (location.hash) {
+            const t = setTimeout(() => document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' }), 350)
+            return () => clearTimeout(t)
+        }
         window.scrollTo(0, 0)
-    }, [location.pathname])
+    }, [location.pathname, location.hash])
 
     return (
         <div className="flex min-h-screen flex-col overflow-x-clip">
@@ -34,14 +48,9 @@ const App = () => {
                 <AnimatePresence mode="wait">
                     <Routes location={location} key={location.pathname}>
                         <Route path="/" element={<Page><Home /></Page>} />
-                        <Route path="/chefs" element={<Page><Chefs /></Page>} />
-                        <Route path="/chefs/:id" element={<Page><ChefProfile /></Page>} />
-                        <Route path="/book/:chefId" element={<Page><ComingSoon title="Booking request" /></Page>} />
-                        <Route path="/grocery" element={<Page><ComingSoon title="Grocery store" /></Page>} />
-                        <Route path="/about" element={<Page><ComingSoon title="About us" /></Page>} />
-                        <Route path="/contact" element={<Page><ComingSoon title="Contact" /></Page>} />
-                        <Route path="/login" element={<Page><ComingSoon title="Login" /></Page>} />
-                        <Route path="/signup" element={<Page><ComingSoon title="Sign up" /></Page>} />
+                        {soon.map(([path, title]) => (
+                            <Route key={path} path={path} element={<Page><ComingSoon title={title} /></Page>} />
+                        ))}
                         <Route path="*" element={<Page><ComingSoon title="Page not found" /></Page>} />
                     </Routes>
                 </AnimatePresence>
