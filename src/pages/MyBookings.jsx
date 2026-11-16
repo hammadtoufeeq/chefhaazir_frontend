@@ -273,6 +273,7 @@ const MyBookings = () => {
                 description={expiredCancelTarget ? `This booking can no longer be cancelled. The cancellation deadline was ${deadlineLabel(expiredCancelTarget.cancellationDeadline)} (${expiredCancelTarget.cancellationWindowMinutes} minutes before the visit).` : `Cancel your booking with ${cancelTarget?.chef?.name || 'your chef'}? The cancellation deadline is ${deadlineLabel(cancelTarget?.cancellationDeadline)}.`}
                 confirmLabel={expiredCancelTarget ? 'Got it' : 'Yes, cancel booking'}
                 tone={expiredCancelTarget ? 'sage' : 'danger'}
+                dismissOnly={!!expiredCancelTarget}
                 busy={cancelMutation.isPending}
                 onCancel={() => { setCancelTarget(null); setExpiredCancelTarget(null) }}
                 onConfirm={() => expiredCancelTarget ? setExpiredCancelTarget(null) : cancelTarget && cancelMutation.mutate({ id: cancelTarget._id })}
