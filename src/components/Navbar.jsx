@@ -66,31 +66,92 @@ const SearchButton = () => {
     )
 }
 
-// Bell: pending booking requests (customer: waiting for the chef, chef: waiting for you)
-const bellSource = {
-    user: { url: '/bookings/mine', to: '/my-bookings', label: 'requests waiting for the chef' },
-    chef: { url: '/bookings/chef', to: '/chef', label: 'new booking requests' }
+const CustomerNotificationsBell = ({ user }) => {
+    const userKey = user?.id || user?.email || 'customer'
+    const storageKey = `chefhaazir-read-notifications:${userKey}`
+    const [open, setOpen] = useState(false)
+    const [toast, setToast] = useState(null)
+    const containerRef = useRef(null)
+    const seenRef = useRef(null)
+    const [unreadIds, setUnreadIds] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(storageKey) || '[]') } catch { return [] }
+    })
+    const { data: count = 0 } = useQuery({
+        queryKey: ['booking-notifications', userKey],
+        queryFn: async () => (await api.get('/bookings/notifications')).data.notifications,
+        enabled: !!user,
+        staleTime: 1_000,
+        refetchInterval: 3_000,
+        refetchOnWindowFocus: true
+    })
+    const notifications = count || []
+
+    useEffect(() => {
+        if (!containerRef.current) return
+        const close = (event) => { if (!containerRef.current?.contains(event.target)) setOpen(false) }
+        document.addEventListener('mousedown', close)
+        return () => document.removeEventListener('mousedown', close)
+    }, [])
+
+    useEffect(() => {
+        if (!count) return
+        const ids = new Set(count.map((notification) => String(notification.bookingId)))
+        if (seenRef.current === null) {
+            seenRef.current = ids
+            return
+        }
+        const fresh = count.filter((notification) => !seenRef.current.has(String(notification.bookingId)))
+        ids.forEach((id) => seenRef.current.add(id))
+        if (fresh.length) {
+            setUnreadIds((previous) => {
+                const next = [...new Set([...previous, ...fresh.map((notification) => String(notification.bookingId))])]
+                try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* storage can be disabled */ }
+                return next
+            })
+            setToast(fresh[0])
+        }
+    }, [count, storageKey])
+
+    useEffect(() => {
+        if (!toast) return
+        const timeout = setTimeout(() => setToast(null), 8_000)
+        return () => clearTimeout(timeout)
+    }, [toast])
+
+    const markRead = (bookingId) => {
+        const next = unreadIds.filter((id) => id !== String(bookingId))
+        setUnreadIds(next)
+        try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* storage can be disabled */ }
+    }
+    const markAllRead = () => {
+        setUnreadIds([])
+        try { localStorage.setItem(storageKey, '[]') } catch { /* storage can be disabled */ }
+    }
+
+    return (
+        <>
+            <div ref={containerRef} className="relative">
+                <button type="button" onClick={() => { setOpen((value) => !value); markAllRead() }} aria-label={`${unreadIds.length} new booking notifications`} aria-expanded={open} className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-sand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"><Icon name="bell" size={19}/>{unreadIds.length > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-cream">{unreadIds.length > 9 ? '9+' : unreadIds.length}</span>}</button>
+                <AnimatePresence>{open && <motion.section initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} role="dialog" aria-label="Booking notifications" className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-xl border border-line bg-white shadow-lift"><div className="flex items-center justify-between border-b border-line px-4 py-3"><div><p className="font-serif text-lg font-semibold">Notifications</p><p className="text-[10px] text-muted">Chef booking updates</p></div><Link to="/my-bookings" onClick={() => setOpen(false)} className="text-[10px] font-bold text-rust hover:underline">My bookings</Link></div>{notifications.length ? <ul className="max-h-80 divide-y divide-line overflow-y-auto">{notifications.map((notification) => { const unread = unreadIds.includes(String(notification.bookingId)); return <li key={notification.bookingId}><Link to={`/my-bookings/${notification.bookingId}`} onClick={() => { markRead(notification.bookingId); setOpen(false) }} className="flex gap-3 px-4 py-3 transition hover:bg-stone-50"><span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${unread ? 'bg-sage-soft text-sage-dark' : 'bg-stone-100 text-muted'}`}><Icon name="checkCircle" size={16}/></span><span className="min-w-0 flex-1"><span className="flex items-center gap-2"><strong className="text-[11px]">Chef accepted</strong>{unread && <span className="h-1.5 w-1.5 rounded-full bg-rust"/>}</span><span className="mt-0.5 block text-[11px] text-muted">{notification.chefName} accepted your request for {notification.date} · {notification.slot}</span></span></Link></li> })}</ul> : <p className="px-4 py-8 text-center text-[12px] text-muted">When a chef accepts a booking, the update will appear here.</p>}</motion.section>}</AnimatePresence>
+            </div>
+            <AnimatePresence>{toast && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] w-[min(380px,calc(100vw-32px))] rounded-xl border border-sage/25 bg-white p-4 shadow-lift sm:right-6"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-soft text-sage-dark"><Icon name="checkCircle" size={18}/></span><div className="min-w-0 flex-1"><p className="text-[12px] font-bold">Chef accepted your booking</p><p className="mt-1 text-[11px] text-muted">{toast.chefName} · {toast.date} · {toast.slot}</p><Link to={`/my-bookings/${toast.bookingId}`} onClick={() => setToast(null)} className="mt-2 inline-flex text-[10px] font-bold text-rust hover:underline">View booking details →</Link></div><button type="button" onClick={() => setToast(null)} aria-label="Dismiss notification" className="rounded p-1 text-muted hover:bg-stone-100"><Icon name="close" size={14}/></button></div></motion.div>}</AnimatePresence>
+        </>
+    )
 }
 
-const Bell = ({ role }) => {
-    const source = bellSource[role]
+// Chef bell: booking requests waiting for the chef.
+const Bell = ({ role, user }) => {
+    if (role === 'user') return <CustomerNotificationsBell user={user}/> 
+    const source = role === 'chef' ? { url: '/bookings/chef', to: '/chef', label: 'new booking requests' } : null
     const { data: count = 0 } = useQuery({
         queryKey: ['pending-count', role],
         queryFn: async () => (await api.get(source.url, { params: { status: 'pending', limit: 1 } })).data.pagination.total,
         enabled: !!source,
-        refetchInterval: 10 * 1000,
+        refetchInterval: 10_000,
         refetchOnWindowFocus: true
     })
     if (!source) return null
-
-    return (
-        <Link to={source.to} aria-label={`${count} ${source.label}`} title={`${count} ${source.label}`} className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-sand">
-            <Icon name="bell" size={19} />
-            {count > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-cream">{count > 9 ? '9+' : count}</span>
-            )}
-        </Link>
-    )
+    return <Link to={source.to} aria-label={`${count} ${source.label}`} title={`${count} ${source.label}`} className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-sand"><Icon name="bell" size={19}/>{count > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-cream">{count > 9 ? '9+' : count}</span>}</Link>
 }
 
 // Logged-in avatar with a small menu
@@ -179,7 +240,7 @@ const Navbar = () => {
                             <Link to={homeFor[user.role]?.to || '/'} className="rounded-lg bg-sage-soft px-4 py-2.5 text-[13px] font-bold text-sage-dark transition hover:bg-sage hover:text-white">
                                 {homeFor[user.role]?.label}
                             </Link>
-                            <Bell role={user.role} />
+                            <Bell role={user.role} user={user} />
                             <AccountMenu user={user} logout={logout} />
                         </>
                     ) : (
@@ -218,6 +279,7 @@ const Navbar = () => {
                             <div className="mt-3 flex gap-3">
                                 {user ? (
                                     <>
+                                        {user.role === 'user' && <Bell role={user.role} user={user}/>}
                                         <Link to={homeFor[user.role]?.to || '/'} className="flex-1 rounded-lg bg-sage py-2.5 text-center font-semibold text-white">{homeFor[user.role]?.label}</Link>
                                         <button type="button" onClick={() => logout()} className="flex-1 rounded-lg border border-rust py-2.5 font-semibold text-rust">Log out</button>
                                     </>

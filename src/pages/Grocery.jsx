@@ -20,7 +20,7 @@ const badges = [
 
 // Big card for the store in the visitor's city (or the first store)
 const FlagshipCard = ({ store, isHome }) => (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-card transition hover:shadow-lift lg:row-span-3">
+    <Link to={storeLink(store.city)} aria-label={`Shop ${store.city} grocery store`} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-card transition hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 lg:row-span-3">
         <div className="relative lg:min-h-72 lg:flex-1">
             <SafeImage src={images.spiceBowls} alt={`Spices and daals at ${store.name}`} className="h-64 sm:h-72 lg:absolute lg:inset-0 lg:h-full" imgClassName="transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute left-3 top-3 flex gap-2">
@@ -44,26 +44,26 @@ const FlagshipCard = ({ store, isHome }) => (
                     <span className="flex items-center gap-1.5"><Icon name="basket" size={14} className="text-rust" /> Daal, ghee, masala</span>
                     <span className="flex items-center gap-1.5"><Icon name="truck" size={14} className="text-rust" /> To your chef</span>
                 </p>
-                <Link to={storeLink(store.city)} className="group/btn flex items-center gap-2 rounded-lg bg-sage px-5 py-3 text-[13px] font-bold text-white transition hover:bg-sage-dark">
+                <span className="group/btn flex items-center gap-2 rounded-lg bg-sage px-5 py-3 text-[13px] font-bold text-white transition group-hover:bg-sage-dark">
                     Shop {store.city} store <Icon name="arrowRight" size={15} className="transition group-hover/btn:translate-x-1" />
-                </Link>
+                </span>
             </div>
         </div>
-    </article>
+    </Link>
 )
 
 const StoreCard = ({ store }) => (
-    <article className="flex flex-col rounded-xl border border-line bg-white p-6 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift">
+    <Link to={storeLink(store.city)} aria-label={`Shop ${store.city} grocery store`} className="group flex flex-col rounded-xl border border-line bg-white p-6 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2">
         <span className="w-fit rounded bg-sage-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-dark">{store.city}</span>
         <h3 className="mt-3 font-serif text-[22px] leading-tight">{store.name}</h3>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted">Fresh pantry staples for home chefs cooking in {store.city}.</p>
         <div className="mt-5 flex items-center justify-between gap-3">
             <span className="text-[12px] text-muted">Free delivery over Rs {FREE_DELIVERY_FROM}</span>
-            <Link to={storeLink(store.city)} className="flex items-center gap-1.5 rounded-lg bg-sage px-4 py-2 text-[12px] font-bold text-white transition hover:bg-sage-dark">
+            <span className="flex items-center gap-1.5 rounded-lg bg-sage px-4 py-2 text-[12px] font-bold text-white transition group-hover:bg-sage-dark">
                 Shop now <Icon name="arrowRight" size={14} />
-            </Link>
+            </span>
         </div>
-    </article>
+    </Link>
 )
 
 const ComingSoonCard = ({ cityList }) => (
