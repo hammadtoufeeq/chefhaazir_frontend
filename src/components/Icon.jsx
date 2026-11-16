@@ -30,6 +30,11 @@ const paths = {
     undo: <><path d="M9 14 4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></>,
     plus: <path d="M12 5v14M5 12h14" />,
     xCircle: <><circle cx="12" cy="12" r="9" /><path d="m9 9 6 6m0-6-6 6" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></>,
+    chat: <path d="M4 5h16v11H9l-5 4V5Z" />,
+    send: <path d="M4 12 20 4l-6 16-3-7-7-1Z" />,
+    arrowUpRight: <path d="M7 17 17 7M8 7h9v9" />,
+    question: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5v.7M12 17h.01" /></>,
     sparkle: <path d="M12 3.5 13.8 10l6.7 2-6.7 2L12 20.5 10.2 14l-6.7-2 6.7-2L12 3.5Z" />
 }
 

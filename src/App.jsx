@@ -8,6 +8,7 @@ import ComingSoon from './pages/ComingSoon'
 import Chefs from './pages/Chefs'
 import ChefProfile from './pages/ChefProfile'
 import About from './pages/About'
+import Contact from './pages/Contact'
 import Grocery from './pages/Grocery'
 import GroceryStore from './pages/GroceryStore'
 
@@ -20,7 +21,6 @@ const Page = ({ children }) => (
 
 const soon = [
     ['/book/:chefId', 'Booking request'],
-    ['/contact', 'Contact'],
     ['/login', 'Login'],
     ['/signup', 'Sign up'],
     ['/my-bookings', 'My bookings'],
@@ -51,6 +51,7 @@ const App = () => {
                         <Route path="/chefs" element={<Page><Chefs /></Page>} />
                         <Route path="/chefs/:id" element={<Page><ChefProfile /></Page>} />
                         <Route path="/about" element={<Page><About /></Page>} />
+                        <Route path="/contact" element={<Page><Contact /></Page>} />
                         <Route path="/grocery" element={<Page><Grocery /></Page>} />
                         <Route path="/grocery/:city" element={<Page><GroceryStore /></Page>} />
                         {soon.map(([path, title]) => (

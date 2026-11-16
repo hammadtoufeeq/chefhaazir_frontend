@@ -8,7 +8,7 @@ React 19 + Vite, Tailwind CSS 4, React Router, React Query, Axios, Framer Motion
 
 ```bash
 npm install
-cp .env.example .env     # VITE_API_URL=http://localhost:5000/api
+cp .env.example .env     # VITE_API_URL=http://localhost:5000/api, VITE_WEB3FORMS_KEY=your key
 npm run dev              # http://localhost:5173
 ```
 
@@ -18,7 +18,7 @@ The backend must be running for live data (the chefs section on Home). Its `CLIE
 
 1. Vercel → Add New → Project → import `chefhaazir_frontend`.
 2. Framework preset: Vite (detected automatically).
-3. Environment variable: `VITE_API_URL` = your deployed backend URL + `/api`.
+3. Environment variables: `VITE_API_URL` = your deployed backend URL + `/api`, and `VITE_WEB3FORMS_KEY` = your Web3Forms access key (for the Contact form).
 4. Deploy. `vercel.json` sends every route to `index.html` so page refreshes work.
 
 ## Colors and fonts
@@ -31,8 +31,9 @@ All brand colors live in `src/index.css` under `@theme`: **rust** (brand accent)
 src/
   components/   Navbar, CityPicker, Footer, Logo, ChefCard, Pagination, DeliveryBar, SafeImage, Reveal, Icon
   context/      AuthContext (GET /auth/me, logout), CityContext (city picked in the navbar)
-  pages/        Home, Chefs, ChefProfile, Grocery, GroceryStore, About (done), ComingSoon (placeholder for pages not built yet)
-  constants/    cities, cuisines (same lists as the backend), images (free Unsplash photos)
+  pages/        Home, Chefs, ChefProfile, Grocery, GroceryStore, About, Contact (done), ComingSoon (placeholder for pages not built yet)
+  constants/    cities, cuisines, grocery (same lists as the backend), images (free Unsplash photos),
+                contact (public phone, email and hours shown on Contact; empty values are hidden)
   lib/          api.js (Axios with cookies + automatic token refresh), time.js (Pakistan time, slots)
 ```
 
