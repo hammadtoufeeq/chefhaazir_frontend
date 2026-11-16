@@ -34,8 +34,14 @@ const dateLabel = (value) => {
     const date = new Date(`${value}T12:00:00+05:00`)
     return new Intl.DateTimeFormat('en-PK', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Karachi' }).format(date)
 }
+const deadlineLabel = (value) => value ? new Intl.DateTimeFormat('en-PK', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Karachi' }).format(new Date(value)) : 'the cancellation deadline'
 const slotLabel = (slot) => String(slot || '').replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 const canCancel = (booking) => ['pending', 'confirmed'].includes(booking.status) && booking.slotStart && new Date(booking.slotStart).getTime() - Date.now() >= 90 * 60 * 1000
+const cancellationAvailableNow = (booking) => {
+    if (!['pending', 'confirmed'].includes(booking.status)) return false
+    if (booking.cancellationDeadline) return new Date(booking.cancellationDeadline).getTime() >= Date.now()
+    return booking.cancellationAllowed ?? canCancel(booking)
+}
 
 const loadBookings = async ({ filter, page }) => {
     if (filter !== 'closed') {
@@ -64,7 +70,8 @@ const BookingCard = ({ booking, onCancel, onDetails, cancelling }) => {
     const info = statusInfo[booking.status] || statusInfo.pending
     const name = booking.chef?.name || 'Chef'
     const meals = [booking.note, ...(booking.groceryItems || []).map((item) => `${item.name} × ${item.quantity}`)].filter(Boolean)
-    const cancellationAllowed = canCancel(booking)
+    const cancellationAllowed = cancellationAvailableNow(booking)
+    const showCancel = booking.status === 'confirmed' || (booking.status === 'pending' && cancellationAllowed)
 
     return (
         <article className={`overflow-hidden rounded-xl border border-line border-t-[3px] bg-white shadow-card ${booking.status === 'confirmed' ? 'border-t-sage' : booking.status === 'disputed' ? 'border-t-orange-700' : 'border-t-transparent'}`}>
@@ -100,7 +107,7 @@ const BookingCard = ({ booking, onCancel, onDetails, cancelling }) => {
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
                         <Link to={`/my-bookings/${booking._id}`} className="rounded-md border border-line px-3 py-1.5 text-[11px] font-semibold transition hover:border-sage/50">Details</Link>
-                        {cancellationAllowed && <button type="button" disabled={cancelling} onClick={() => onCancel(booking)} className="rounded-md px-2 py-1.5 text-[11px] font-semibold text-rust transition hover:bg-rust-soft disabled:opacity-50">{cancelling ? 'Cancelling…' : 'Cancel booking'}</button>}
+                        {showCancel && <button type="button" disabled={cancelling} onClick={() => onCancel(booking)} className="rounded-md px-2 py-1.5 text-[11px] font-semibold text-rust transition hover:bg-rust-soft disabled:opacity-50">{cancelling ? 'Cancelling…' : 'Cancel booking'}</button>}
                     </div>
                 </div>
             </div>
@@ -154,6 +161,7 @@ const MyBookings = () => {
     const [search, setSearch] = useState('')
     const [detailId, setDetailId] = useState(null)
     const [cancelTarget, setCancelTarget] = useState(null)
+    const [expiredCancelTarget, setExpiredCancelTarget] = useState(null)
     const [notice, setNotice] = useState(location.state?.bookingNotice || '')
 
     const { data, isLoading, isError, error, refetch } = useQuery({
@@ -187,7 +195,12 @@ const MyBookings = () => {
             queryClient.invalidateQueries({ queryKey: ['my-bookings-count'] })
             queryClient.invalidateQueries({ queryKey: ['pending-count'] })
         },
-        onError: (cancelError) => { setNotice(errorMessage(cancelError)); setCancelTarget(null) }
+        onError: (cancelError) => {
+            const message = errorMessage(cancelError)
+            if (cancelError.response?.status === 400 && /cancelled until|already ended/i.test(message)) setExpiredCancelTarget(cancelTarget)
+            else setNotice(message)
+            setCancelTarget(null)
+        }
     })
 
     const bookings = data?.bookings || []
@@ -198,7 +211,12 @@ const MyBookings = () => {
     }, [bookings, search])
 
     const changeFilter = (next) => { setFilter(next); setPage(1); setNotice('') }
-    const cancelBooking = (booking) => setCancelTarget(booking)
+    const cancelBooking = (booking) => {
+        const allowed = cancellationAvailableNow(booking)
+        if (!allowed) { setExpiredCancelTarget(booking); return }
+        setExpiredCancelTarget(null)
+        setCancelTarget(booking)
+    }
 
     if (authLoading) return <div className="mx-auto min-h-[50vh] max-w-7xl px-4 py-20"><div className="h-8 w-52 animate-pulse rounded bg-stone-100" /></div>
     if (!user) return (
@@ -250,14 +268,14 @@ const MyBookings = () => {
             </main>
             {detailId && <BookingDetails id={detailId} onClose={() => setDetailId(null)} />}
             <ConfirmDialog
-                open={!!cancelTarget}
-                title="Cancel this booking?"
-                description={`Cancel your booking with ${cancelTarget?.chef?.name || 'your chef'}? You can cancel up to 90 minutes before the visit starts.`}
-                confirmLabel="Yes, cancel booking"
-                tone="danger"
+                open={!!cancelTarget || !!expiredCancelTarget}
+                title={expiredCancelTarget ? 'Cancellation window expired' : 'Cancel this booking?'}
+                description={expiredCancelTarget ? `This booking can no longer be cancelled. The cancellation deadline was ${deadlineLabel(expiredCancelTarget.cancellationDeadline)} (${expiredCancelTarget.cancellationWindowMinutes} minutes before the visit).` : `Cancel your booking with ${cancelTarget?.chef?.name || 'your chef'}? The cancellation deadline is ${deadlineLabel(cancelTarget?.cancellationDeadline)}.`}
+                confirmLabel={expiredCancelTarget ? 'Got it' : 'Yes, cancel booking'}
+                tone={expiredCancelTarget ? 'sage' : 'danger'}
                 busy={cancelMutation.isPending}
-                onCancel={() => setCancelTarget(null)}
-                onConfirm={() => cancelTarget && cancelMutation.mutate({ id: cancelTarget._id })}
+                onCancel={() => { setCancelTarget(null); setExpiredCancelTarget(null) }}
+                onConfirm={() => expiredCancelTarget ? setExpiredCancelTarget(null) : cancelTarget && cancelMutation.mutate({ id: cancelTarget._id })}
             />
         </>
     )
