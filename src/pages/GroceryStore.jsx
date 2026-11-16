@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -17,12 +17,17 @@ const unitLine = (unit) => `Sold per ${unit}`
 
 // One catalog item: { name, category, price, unit, inStock }. Items have no photo, so the
 // tile shows the category's emoji on its tint.
-const ItemCard = ({ item, chefsLink }) => {
+const ItemCard = ({ item, onOpen }) => {
     const style = categoryStyle[item.category] || categoryStyle.Other
     const out = !item.inStock
     return (
-        <article className={`group flex h-full flex-col rounded-xl border border-line bg-white p-2.5 shadow-card transition ${out ? '' : 'hover:-translate-y-1 hover:shadow-lift'}`}>
-            <div className={`relative flex aspect-[2/1] items-center sm:aspect-[4/3] justify-center overflow-hidden rounded-lg ${style.tint} ${out ? 'grayscale' : ''}`}>
+        <button
+            type="button"
+            onClick={() => onOpen(item)}
+            aria-haspopup="dialog"
+            className={`group flex h-full w-full flex-col rounded-xl border border-line bg-white p-2.5 text-left shadow-card transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sage ${out ? '' : 'hover:-translate-y-1 hover:shadow-lift'}`}
+        >
+            <div className={`relative flex aspect-[2/1] w-full items-center justify-center overflow-hidden rounded-lg sm:aspect-[4/3] ${style.tint} ${out ? 'grayscale' : ''}`}>
                 <span className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/30" />
                 <span className="pointer-events-none absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-white/25" />
                 <span aria-hidden="true" className={`relative text-[64px] drop-shadow-sm transition-transform duration-500 ${out ? 'opacity-50' : 'group-hover:scale-110 group-hover:-rotate-6'}`}>{style.emoji}</span>
@@ -30,7 +35,7 @@ const ItemCard = ({ item, chefsLink }) => {
                     {out ? 'Out of stock' : 'In stock'}
                 </span>
             </div>
-            <div className={`flex flex-1 flex-col px-2 pb-2 pt-4 ${out ? 'opacity-60' : ''}`}>
+            <div className={`flex w-full flex-1 flex-col px-2 pb-2 pt-4 ${out ? 'opacity-60' : ''}`}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">{item.category}</p>
                 <h3 className="mt-1.5 font-serif text-[20px] leading-tight">{item.name}</h3>
                 <p className="mt-1 text-[12px] text-muted">{unitLine(item.unit)}</p>
@@ -42,16 +47,100 @@ const ItemCard = ({ item, chefsLink }) => {
                             <span className="text-[13px] text-muted"> / {item.unit}</span>
                         </p>
                     </div>
-                    {out ? (
-                        <span className="rounded border border-line px-2.5 py-1.5 text-[11px] text-muted">Unavailable</span>
-                    ) : (
-                        <Link to={chefsLink} title="Book a chef to add this item" className="flex shrink-0 items-center gap-1 rounded border border-line bg-sand/60 px-2.5 py-1.5 text-[11px] font-semibold text-ink/80 transition hover:border-sage hover:bg-sage hover:text-white">
-                            <Icon name="plus" size={13} strokeWidth={2.2} /> Book with chef
-                        </Link>
-                    )}
+                    <span className={`flex shrink-0 items-center gap-1 rounded border px-2.5 py-1.5 text-[11px] font-semibold transition ${out ? 'border-line text-muted' : 'border-line bg-sand/60 text-ink/80 group-hover:border-sage group-hover:bg-sage group-hover:text-white'}`}>
+                        {out ? 'Unavailable' : <><Icon name="plus" size={13} strokeWidth={2.2} /> Add</>}
+                    </span>
                 </div>
             </div>
-        </article>
+        </button>
+    )
+}
+
+const steps = [
+    { icon: 'chef', text: 'Pick a chef and a 2-hour slot' },
+    { icon: 'basket', text: 'Add this item on the booking form' },
+    { icon: 'truck', text: 'It reaches your chef before the slot' }
+]
+
+// Groceries can't be bought on their own: they are added to a booking with a chef
+const BookChefFirst = ({ item, city, storeName, onClose }) => {
+    const closeRef = useRef(null)
+
+    useEffect(() => {
+        if (!item) return
+        closeRef.current?.focus()
+        const onKey = (e) => { if (e.key === 'Escape') onClose() }
+        document.addEventListener('keydown', onKey)
+        const { overflow } = document.body.style
+        document.body.style.overflow = 'hidden'
+        return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = overflow }
+    }, [item, onClose])
+
+    const style = item && (categoryStyle[item.category] || categoryStyle.Other)
+
+    return (
+        <AnimatePresence>
+            {item && (
+                <motion.div className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <div className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onClick={onClose} />
+                    <motion.div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="book-first-title"
+                        initial={{ y: 40, opacity: 0, scale: 0.98 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 30, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                        className="relative w-full max-w-md overflow-hidden rounded-t-2xl bg-white shadow-lift sm:rounded-2xl"
+                    >
+                        <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm hover:bg-white">
+                            <Icon name="close" size={16} strokeWidth={2.2} />
+                        </button>
+
+                        {/* The item they clicked */}
+                        <div className={`flex items-center gap-4 p-5 pr-14 ${style.tint}`}>
+                            <span aria-hidden="true" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/60 text-[38px]">{style.emoji}</span>
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60">{item.category}</p>
+                                <p className="font-serif text-[20px] leading-tight">{item.name}</p>
+                                <p className="mt-0.5 text-[13px]"><span className="font-bold text-rust">Rs {item.price.toLocaleString()}</span> <span className="text-ink/60">/ {item.unit}</span></p>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rust-soft text-rust"><Icon name="chef" size={22} /></span>
+                            <h2 id="book-first-title" className="mt-4 font-serif text-[26px] leading-tight">Book a chef first</h2>
+                            <p className="mt-2 text-[14px] leading-relaxed text-muted">
+                                {item.inStock
+                                    ? <>Groceries from {storeName} aren’t sold on their own. They come with a chef booking, and your chef brings them to your kitchen.</>
+                                    : <>This item is out of stock right now. Groceries come with a chef booking, so pick a chef and add what’s available on the booking form.</>}
+                            </p>
+
+                            <ol className="mt-5 space-y-3">
+                                {steps.map((s, i) => (
+                                    <li key={s.text} className="flex items-center gap-3 text-[13.5px]">
+                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sage-soft text-[12px] font-bold text-sage-dark">{i + 1}</span>
+                                        <Icon name={s.icon} size={16} className="text-muted" />
+                                        {s.text}
+                                    </li>
+                                ))}
+                            </ol>
+
+                            <p className="mt-5 rounded-lg bg-sand/70 px-3.5 py-2.5 text-[12px] text-muted">
+                                Free delivery from Rs {FREE_DELIVERY_FROM}, otherwise Rs {DELIVERY_FEE}. Pay the chef in cash with their fee.
+                            </p>
+
+                            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row">
+                                <button type="button" onClick={onClose} className="rounded-lg border border-line px-5 py-3 text-[14px] font-semibold text-ink/80 hover:border-sage/50 sm:flex-1">Keep browsing</button>
+                                <Link to={`/chefs?city=${encodeURIComponent(city)}`} className="flex items-center justify-center gap-2 rounded-lg bg-sage-dark px-5 py-3 text-[14px] font-bold text-white hover:bg-sage sm:flex-[1.4]">
+                                    Find a chef in {city} <Icon name="arrowRight" size={15} />
+                                </Link>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     )
 }
 
@@ -64,6 +153,8 @@ const GroceryStore = () => {
     const search = params.get('search') || ''
     const page = Math.max(1, Number(params.get('page')) || 1)
     const [term, setTerm] = useState(search)
+    const [picked, setPicked] = useState(null)
+    const closePicked = useCallback(() => setPicked(null), [])
 
     useEffect(() => { if (city) setCity(city) }, [city])   // eslint-disable-line react-hooks/exhaustive-deps
     useEffect(() => setTerm(search), [search])
@@ -219,7 +310,7 @@ const GroceryStore = () => {
                                 <AnimatePresence mode="popLayout">
                                     {data?.items.map((item, i) => (
                                         <motion.div key={item._id} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, delay: Math.min(i, 12) * 0.03 }}>
-                                            <ItemCard item={item} chefsLink={chefsLink} />
+                                            <ItemCard item={item} onOpen={setPicked} />
                                         </motion.div>
                                     ))}
                                 </AnimatePresence>
@@ -243,6 +334,7 @@ const GroceryStore = () => {
                     </>
                 )}
             </div>
+            <BookChefFirst item={picked} city={city} storeName={storeName} onClose={closePicked} />
         </>
     )
 }
