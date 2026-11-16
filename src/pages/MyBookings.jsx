@@ -99,7 +99,7 @@ const BookingCard = ({ booking, onCancel, onDetails, cancelling }) => {
                         <p className="mt-1 text-[10px] text-muted">Cash after service</p>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button type="button" onClick={() => onDetails(booking._id)} className="rounded-md border border-line px-3 py-1.5 text-[11px] font-semibold transition hover:border-sage/50">Details</button>
+                        <Link to={`/my-bookings/${booking._id}`} className="rounded-md border border-line px-3 py-1.5 text-[11px] font-semibold transition hover:border-sage/50">Details</Link>
                         {cancellationAllowed && <button type="button" disabled={cancelling} onClick={() => onCancel(booking)} className="rounded-md px-2 py-1.5 text-[11px] font-semibold text-rust transition hover:bg-rust-soft disabled:opacity-50">{cancelling ? 'Cancelling…' : 'Cancel booking'}</button>}
                     </div>
                 </div>
@@ -114,7 +114,7 @@ const BookingDetails = ({ id, onClose }) => {
         queryKey: ['booking-detail', id],
         queryFn: async () => (await api.get(`/bookings/${id}`)).data.booking,
         enabled: !!id,
-        refetchInterval: filter === 'closed' ? 15_000 : 5_000,
+        refetchInterval: 5_000,
         refetchOnWindowFocus: true
     })
     const chef = data?.chef

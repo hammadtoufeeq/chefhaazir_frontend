@@ -10,18 +10,18 @@ import { todayInPakistan, addDays, dateParts, slotLabel, SLOTS } from '../lib/ti
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import ConfirmDialog from '../components/ConfirmDialog'
+import Contact from './Contact'
 
 const NAV = [
     { to: '/chef', label: 'Overview', icon: 'sparkle', exact: true },
-    { to: '/chef/requests', label: 'Requests', icon: 'bell' },
+    { to: '/chef/timings', label: 'Kitchen Timings', icon: 'calendar' },
     { to: '/chef/bookings', label: 'Bookings', icon: 'calendar' },
     { to: '/chef/earnings', label: 'Earnings', icon: 'wallet' },
     { to: '/chef/profile', label: 'Profile', icon: 'user' }
 ]
 const TOP_NAV = [
     { to: '/chef', label: 'Dashboard', exact: true },
-    { to: '/chef/profile', label: 'My Menu & Specialties' },
-    { to: '/chef/timings', label: 'Kitchen Timings' }
+    { to: '/chef/profile', label: 'My Menu & Specialties' }
 ]
 const statusLabels = {
     pending: ['Pending response', 'border-amber-200 bg-amber-50 text-amber-800'],
@@ -59,6 +59,16 @@ const SectionHeading = ({ eyebrow, title, text, action }) => (
         <div><p className="text-[10px] font-bold uppercase tracking-[0.15em] text-rust">{eyebrow}</p><h1 className="mt-1 font-serif text-[32px] font-semibold leading-tight tracking-tight sm:text-[38px]">{title}</h1>{text && <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted">{text}</p>}</div>
         {action}
     </div>
+)
+
+const DashboardSections = ({ active }) => (
+    <nav aria-label="Chef dashboard sections" className="mb-5 flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl bg-stone-100 p-1">
+        {[
+            ['overview', '/chef', 'Overview'],
+            ['timings', '/chef/timings', 'Kitchen Timings'],
+            ['bookings', '/chef/bookings', 'Bookings']
+        ].map(([key, to, label]) => <Link key={key} to={to} aria-current={active === key ? 'page' : undefined} className={`shrink-0 rounded-lg px-4 py-2 text-[11px] font-semibold transition ${active === key ? 'bg-white text-rust shadow-sm' : 'text-ink/70 hover:text-ink'}`}>{label}</Link>)}
+    </nav>
 )
 
 const Panel = ({ children, className = '' }) => <section className={`rounded-xl border border-line bg-white shadow-card ${className}`}>{children}</section>
@@ -221,6 +231,7 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
     return (
         <>
         <div>
+            <DashboardSections active="bookings"/>
             <SectionHeading eyebrow="Kitchen workspace" title={label} text={mode === 'requests' ? 'Review incoming requests and choose the bookings that suit your kitchen.' : 'Keep track of accepted visits and their latest status.'} action={mode === 'requests' && <span className="rounded-full bg-rust-soft px-3 py-1.5 text-[11px] font-bold text-rust">{pendingCount} waiting</span>} />
             <div className="mt-6 flex gap-2 overflow-x-auto pb-2">{bookingFilters.map(([value, title]) => <button key={value} type="button" onClick={() => setStatus(value)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${status === value ? 'border-sage-dark bg-sage-dark text-white' : 'border-line bg-white text-ink/75 hover:border-sage/50'}`}>{title}{value === 'pending' && ` (${pendingCount})`}</button>)}</div>
             {notice && <div role="status" className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-sage/20 bg-sage-soft px-4 py-3 text-[12px] text-sage-dark"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Dismiss"><Icon name="close" size={15}/></button></div>}
@@ -320,26 +331,36 @@ const Earnings = () => {
 
 const ProfileEditor = ({ profile, queryClient }) => {
     const [draft, setDraft] = useState(null)
-    const [cuisineText, setCuisineText] = useState('')
+    const [cuisineChoice, setCuisineChoice] = useState('')
+    const [customCuisine, setCustomCuisine] = useState('')
     const [notice, setNotice] = useState('')
     useEffect(() => {
         if (!draft && profile) {
             setDraft({ city: profile.city, address: profile.address, cuisines: profile.cuisines || [], ratePerSlot: String(profile.ratePerSlot), bio: profile.bio || '' })
-            setCuisineText((profile.cuisines || []).join(', '))
         }
     }, [profile, draft])
     const updateMutation = useMutation({
         mutationFn: (body) => api.patch('/chefs/me/profile', body),
-        onSuccess: (response) => { setDraft({ ...draft, ...response.data.profile, ratePerSlot: String(response.data.profile.ratePerSlot) }); setCuisineText((response.data.profile.cuisines || []).join(', ')); setNotice(response.data.message); queryClient.invalidateQueries({ queryKey: ['chef-profile'] }); queryClient.invalidateQueries({ queryKey: ['chefs'] }) },
+        onSuccess: (response) => { setDraft({ ...draft, ...response.data.profile, ratePerSlot: String(response.data.profile.ratePerSlot) }); setNotice(response.data.message); queryClient.invalidateQueries({ queryKey: ['chef-profile'] }); queryClient.invalidateQueries({ queryKey: ['chefs'] }) },
         onError: (error) => setNotice(errorMessage(error))
     })
     if (!draft) return <div className="h-72 animate-pulse rounded-xl bg-stone-100"/>
     const update = (key) => (event) => setDraft({ ...draft, [key]: event.target.value })
+    const addCuisine = () => {
+        const value = cuisineChoice === 'Other' ? customCuisine.trim() : cuisineChoice
+        if (!value || value.length < 2 || value.length > 40) { setNotice('Choose a cuisine or enter a name between 2 and 40 characters.'); return }
+        if (draft.cuisines.some((item) => item.toLowerCase() === value.toLowerCase())) { setNotice('That cuisine is already selected.'); return }
+        if (draft.cuisines.length >= 5) { setNotice('You can add up to 5 cuisines.'); return }
+        setDraft({ ...draft, cuisines: [...draft.cuisines, value] })
+        setCuisineChoice('')
+        setCustomCuisine('')
+        setNotice('')
+    }
+    const removeCuisine = (value) => setDraft({ ...draft, cuisines: draft.cuisines.filter((item) => item !== value) })
     const submit = (event) => {
         event.preventDefault()
-        const parsedCuisines = cuisineText.split(',').map((item) => item.trim()).filter(Boolean)
-        if (!parsedCuisines.length || parsedCuisines.length > 5) { setNotice('Enter between 1 and 5 comma-separated cuisines.'); return }
-        updateMutation.mutate({ city: draft.city, address: draft.address.trim(), cuisines: parsedCuisines, ratePerSlot: Number(draft.ratePerSlot), bio: draft.bio.trim() })
+        if (!draft.cuisines.length || draft.cuisines.length > 5) { setNotice('Choose between 1 and 5 cuisines from the list.'); return }
+        updateMutation.mutate({ city: draft.city, address: draft.address.trim(), cuisines: draft.cuisines, ratePerSlot: Number(draft.ratePerSlot), bio: draft.bio.trim() })
     }
     return <div>
         <SectionHeading eyebrow="Your customer-facing listing" title="Profile & specialties" text="Keep your chef profile, cooking focus and rate up to date."/>
@@ -349,7 +370,7 @@ const ProfileEditor = ({ profile, queryClient }) => {
                 <label className="text-[11px] font-bold">Kitchen city<select value={draft.city} onChange={update('city')} className="mt-1.5 block w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[12px] font-normal outline-none focus:border-sage">{cities.map((city) => <option key={city}>{city}</option>)}</select></label>
                 <label className="text-[11px] font-bold">Rate per 2-hour slot<input required type="number" min={500} max={20000} step={100} value={draft.ratePerSlot} onChange={update('ratePerSlot')} className="mt-1.5 block w-full rounded-lg border border-line px-3 py-2.5 text-[12px] font-normal outline-none focus:border-sage"/></label>
                 <label className="text-[11px] font-bold sm:col-span-2">Kitchen address<textarea required minLength={10} maxLength={200} rows={2} value={draft.address} onChange={update('address')} className="mt-1.5 block w-full resize-y rounded-lg border border-line px-3 py-2.5 text-[12px] font-normal outline-none focus:border-sage"/></label>
-                <label className="text-[11px] font-bold sm:col-span-2">Cuisines and specialties <span className="font-normal text-muted">(comma separated, up to 5)</span><input required value={cuisineText} onChange={(event) => setCuisineText(event.target.value)} list="chef-cuisine-options" className="mt-1.5 block w-full rounded-lg border border-line px-3 py-2.5 text-[12px] font-normal outline-none focus:border-sage"/><datalist id="chef-cuisine-options">{cuisines.map((item) => <option key={item} value={item}/>)}</datalist></label>
+                <div className="sm:col-span-2"><div className="flex items-center justify-between"><p className="text-[11px] font-bold">Cuisines and specialties <span className="font-normal text-muted">(choose up to 5)</span></p><span className="text-[10px] text-muted">{draft.cuisines.length}/5 selected</span></div><div className="mt-2 flex flex-wrap gap-2">{draft.cuisines.map((item) => <span key={item} className="inline-flex items-center gap-2 rounded-full bg-sage-soft px-3 py-1.5 text-[11px] font-semibold text-sage-dark">{item}<button type="button" onClick={() => removeCuisine(item)} aria-label={`Remove ${item}`} className="font-bold hover:text-rust">×</button></span>)}{!draft.cuisines.length && <span className="text-[11px] text-muted">No cuisines selected yet.</span>}</div><div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><div className="grid gap-2 sm:grid-cols-2"><select aria-label="Choose a cuisine or specialty" value={cuisineChoice} onChange={(event) => setCuisineChoice(event.target.value)} className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[12px] outline-none focus:border-sage"><option value="">Choose a cuisine or specialty</option>{cuisines.map((item) => <option key={item} value={item}>{item}</option>)}<option value="Other">Other · add your own</option></select>{cuisineChoice === 'Other' && <input value={customCuisine} onChange={(event) => setCustomCuisine(event.target.value)} maxLength={40} placeholder="Type another cuisine" className="w-full rounded-lg border border-line px-3 py-2.5 text-[12px] outline-none focus:border-sage"/>}</div><button type="button" onClick={addCuisine} disabled={draft.cuisines.length >= 5} className="rounded-lg border border-line px-4 py-2.5 text-[11px] font-bold hover:border-sage/50 disabled:opacity-50">Add cuisine</button></div><p className="mt-1.5 text-[10px] text-muted">Select from the dropdown or choose Other to add a cuisine that is not listed.</p></div>
                 <label className="text-[11px] font-bold sm:col-span-2">Cooking bio<textarea required minLength={10} maxLength={300} rows={4} value={draft.bio} onChange={update('bio')} className="mt-1.5 block w-full resize-y rounded-lg border border-line px-3 py-2.5 text-[12px] font-normal outline-none focus:border-sage"/><span className="mt-1 block text-right text-[10px] font-normal text-muted">{draft.bio.length}/300</span></label>
                 <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2"><p className="text-[10px] text-muted">Your phone is verified by our team. To change it, contact partner support.</p><button type="submit" disabled={updateMutation.isPending} className="rounded-lg bg-sage-dark px-5 py-2.5 text-[12px] font-bold text-white hover:bg-sage disabled:opacity-50">{updateMutation.isPending ? 'Saving…' : 'Save profile changes'}</button></div>
             </form>
@@ -362,12 +383,33 @@ const KitchenTimings = ({ profile }) => {
     const [date, setDate] = useState(today)
     const dates = useMemo(() => Array.from({ length: 8 }, (_, index) => addDays(today, index)), [today])
     const availability = useQuery({ queryKey: ['chef-timing-availability', profile.id, date], queryFn: async () => (await api.get(`/chefs/${profile.id}/availability`, { params: { date } })).data.slots, enabled: !!profile.id })
-    if (!profile.id) return <div><SectionHeading eyebrow="Kitchen schedule" title="Kitchen timings" text="See which two-hour slots customers can request over the coming week."/><Panel className="mt-5 p-6 text-[12px] leading-relaxed text-muted">The chef availability calendar will appear after your backend deployment updates the profile response. Refresh this page once the backend is live.</Panel></div>
+    const queryClient = useQueryClient()
+    const [notice, setNotice] = useState('')
+    const saveAvailability = useMutation({
+        mutationFn: (unavailableSlots) => api.patch('/chefs/me/availability', { date, unavailableSlots }),
+        onSuccess: (response) => {
+            setNotice(response.data.message)
+            queryClient.invalidateQueries({ queryKey: ['chef-timing-availability', profile.id, date] })
+            queryClient.invalidateQueries({ queryKey: ['availability'] })
+            queryClient.invalidateQueries({ queryKey: ['chefs'] })
+        },
+        onError: (error) => setNotice(errorMessage(error))
+    })
+    const toggleUnavailable = (slotName) => {
+        const slots = availability.data || []
+        const busySlots = slots.filter((item) => item.status === 'chef_unavailable').map((item) => item.slot)
+        const next = busySlots.includes(slotName) ? busySlots.filter((item) => item !== slotName) : [...busySlots, slotName]
+        saveAvailability.mutate([...new Set(next)])
+    }
+    if (!profile.id) return <div><DashboardSections active="timings"/><SectionHeading eyebrow="Kitchen schedule" title="Kitchen timings" text="See which two-hour slots customers can request over the coming week."/><Panel className="mt-5 p-6 text-[12px] leading-relaxed text-muted">The chef availability calendar will appear after your backend deployment updates the profile response.</Panel></div>
     return <div>
-        <SectionHeading eyebrow="Kitchen schedule" title="Kitchen timings" text="See which two-hour slots customers can request over the coming week."/>
-        <div className="mt-5 rounded-lg border border-sage/20 bg-sage-soft/50 p-4 text-[12px] leading-relaxed text-sage-dark"><strong>How availability works:</strong> the platform offers seven daily two-hour slots. Confirmed bookings reserve their slot; pending requests do not block it until you accept.</div>
-        <Panel className="mt-5 p-5 sm:p-6"><div className="flex gap-2 overflow-x-auto pb-2">{dates.map((value, index) => { const parts = dateParts(value); const active = date === value; return <button key={value} type="button" onClick={() => setDate(value)} className={`flex w-[64px] shrink-0 flex-col items-center rounded-lg border px-2 py-2 ${active ? 'border-sage-dark bg-sage-dark text-white' : 'border-line hover:border-sage/50'}`}><span className={`text-[9px] font-bold uppercase ${active ? 'text-white/70' : 'text-muted'}`}>{index === 0 ? 'Today' : parts.day}</span><span className="font-serif text-[19px] font-semibold">{parts.date}</span><span className={`text-[9px] ${active ? 'text-white/70' : 'text-muted'}`}>{parts.month}</span></button>})}</div>
-            {availability.isLoading ? <div className="mt-4 grid gap-2 sm:grid-cols-2">{SLOTS.map((slot) => <div key={slot} className="h-14 animate-pulse rounded-lg bg-stone-100"/>)}</div> : availability.isError ? <p className="mt-4 rounded-lg bg-rust-soft p-3 text-[12px] text-rust">{errorMessage(availability.error)} <button type="button" onClick={() => availability.refetch()} className="font-bold underline">Retry</button></p> : <div className="mt-4 grid gap-2 sm:grid-cols-2">{availability.data?.map((slot) => { const blocked = slot.status !== 'available'; const status = { available: 'Open for requests', booked: 'Confirmed booking', too_late: 'Booking window closed', too_far: 'Outside booking window' }[slot.status]; return <div key={slot.slot} className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 ${slot.status === 'booked' ? 'border-rust/15 bg-rust-soft/40' : blocked ? 'border-line bg-stone-50 text-muted' : 'border-sage/20 bg-sage-soft/35'}`}><div><p className="text-[13px] font-bold">{slotLabel(slot.slot)}</p><p className="mt-0.5 text-[10px]">{status}</p></div><span className={`h-2.5 w-2.5 rounded-full ${slot.status === 'available' ? 'bg-sage' : slot.status === 'booked' ? 'bg-rust' : 'bg-stone-300'}`}/></div>})}</div>}
+        <DashboardSections active="timings"/>
+        <SectionHeading eyebrow="Availability" title="Chef schedule" text="Choose the days and 2-hour slots when customers can book you."/>
+        <div className="mt-5 rounded-lg border border-sage/20 bg-sage-soft/50 p-4 text-[12px] leading-relaxed text-sage-dark"><strong>Set your availability:</strong> select an open slot to mark yourself busy. Customers will no longer be able to request it. Confirmed bookings and active requests can’t be blocked until they’re resolved.</div>
+        {notice && <div role="status" className="mt-4 rounded-lg bg-stone-100 px-4 py-3 text-[12px]">{notice}</div>}
+        <Panel className="mt-5 p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2 overflow-x-auto pb-2">{dates.map((value, index) => { const parts = dateParts(value); const active = date === value; return <button key={value} type="button" onClick={() => { setDate(value); setNotice('') }} className={`flex w-[64px] shrink-0 flex-col items-center rounded-lg border px-2 py-2 ${active ? 'border-sage-dark bg-sage-dark text-white' : 'border-line hover:border-sage/50'}`}><span className={`text-[9px] font-bold uppercase ${active ? 'text-white/70' : 'text-muted'}`}>{index === 0 ? 'Today' : parts.day}</span><span className="font-serif text-[19px] font-semibold">{parts.date}</span><span className={`text-[9px] ${active ? 'text-white/70' : 'text-muted'}`}>{parts.month}</span></button>})}</div><button type="button" disabled={!availability.data || saveAvailability.isPending} onClick={() => saveAvailability.mutate(availability.data.every((slot) => slot.status === 'chef_unavailable') ? [] : SLOTS)} className="rounded-lg border border-line px-3 py-2 text-[10px] font-bold hover:border-rust/40 disabled:opacity-50">{availability.data?.every((slot) => slot.status === 'chef_unavailable') ? 'Open full day' : 'Mark full day busy'}</button></div>
+            {availability.isLoading ? <div className="mt-4 grid gap-2 sm:grid-cols-2">{SLOTS.map((slot) => <div key={slot} className="h-14 animate-pulse rounded-lg bg-stone-100"/>)}</div> : availability.isError ? <p className="mt-4 rounded-lg bg-rust-soft p-3 text-[12px] text-rust">{errorMessage(availability.error)} <button type="button" onClick={() => availability.refetch()} className="font-bold underline">Retry</button></p> : <div className="mt-4 grid gap-2 sm:grid-cols-2">{availability.data?.map((slot) => { const busy = slot.status === 'chef_unavailable'; const editable = ['available', 'chef_unavailable'].includes(slot.status); const status = { available: 'Available for booking', chef_unavailable: 'You marked busy · click to reopen', booked: 'Confirmed booking', too_late: 'Booking window closed', too_far: 'Outside booking window' }[slot.status]; return <button key={slot.slot} type="button" disabled={!editable || saveAvailability.isPending} onClick={() => toggleUnavailable(slot.slot)} className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition disabled:cursor-not-allowed ${busy ? 'border-rust/20 bg-rust-soft/50 text-rust' : slot.status === 'available' ? 'border-sage/20 bg-sage-soft/35 hover:border-sage' : 'border-line bg-stone-50 text-muted'}`}><span><span className="block text-[13px] font-bold">{slotLabel(slot.slot)}</span><span className="mt-0.5 block text-[10px]">{status}</span></span><span className={`rounded-full px-2 py-1 text-[9px] font-bold ${busy ? 'bg-rust text-white' : slot.status === 'available' ? 'bg-white text-sage-dark' : 'bg-stone-200'}`}>{busy ? 'Busy' : slot.status === 'available' ? 'Open' : 'Unavailable'}</span></button>})}</div>}
+            {saveAvailability.isPending && <p className="mt-4 text-[11px] text-muted">Saving schedule…</p>}
         </Panel>
     </div>
 }
@@ -420,7 +462,8 @@ const ChefAnalyticsOverview = ({ pendingCount }) => {
         ['Cancelled / other', (cancelled.data?.pagination?.total || 0) + (rejected.data?.pagination?.total || 0) + (expired.data?.pagination?.total || 0) + (disputed.data?.pagination?.total || 0), 'bg-stone-300']
     ]
     return <div className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-rust">Chef analytics</p><h1 className="mt-1 font-serif text-[34px] font-semibold leading-tight sm:text-[40px]">Kitchen dashboard</h1><p className="mt-1 text-[12px] text-muted">Booking activity and payout overview · updates automatically</p></div><Link to="/chef/requests" className="rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white">Review {pendingCount} requests</Link></div>
+        <DashboardSections active="overview"/>
+        <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-rust">Chef analytics</p><h1 className="mt-1 font-serif text-[34px] font-semibold leading-tight sm:text-[40px]">Kitchen dashboard</h1><p className="mt-1 text-[12px] text-muted">Booking activity and payout overview · updates automatically</p></div>
         {earnings.data?.summary?.paymentBlocked && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rust/15 bg-rust-soft/60 p-4"><p className="text-[12px] text-rust-dark">Your account has an overdue commission of <strong>{money(earnings.data.summary.totalDue)}</strong>.</p><Link to="/chef/earnings" className="text-[11px] font-bold text-rust underline">View earnings</Link></div>}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, icon, color]) => <Panel key={label} className="p-5"><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p><Icon name={icon} size={18} className={color}/></div><p className="mt-4 font-serif text-[34px] font-semibold">{results.some((result) => result.isLoading) ? '—' : value}</p></Panel>)}</div>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)]">
@@ -440,7 +483,7 @@ const Overview = ({ profile, queryClient, pendingCount, navigate }) => profile.a
             <Onboarding profile={profile} queryClient={queryClient}/>
             <aside className="space-y-3"><div className="flex items-center justify-between gap-2"><h2 className="flex items-center gap-2 font-serif text-[17px]"><Icon name="eye" size={16}/> Customer view preview</h2><span className="rounded-full bg-rust-soft px-2.5 py-1 text-[9px] font-bold text-rust">{profile.approvalStatus === 'approved' ? 'Live' : 'Draft'}</span></div><p className="text-[11px] leading-relaxed text-muted">This is how your kitchen profile will appear to customers looking for a home chef.</p><ChefPreview profile={profile}/><div className="rounded-xl border border-line bg-stone-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Requests waiting</p><p className="mt-1 font-serif text-[25px] font-semibold">{pendingCount}</p><button type="button" onClick={() => navigate('/chef/requests')} className="mt-2 text-[11px] font-bold text-rust underline">Review requests</button></div></aside>
         </div>
-        <div className="mt-7 flex flex-col gap-4 rounded-xl bg-stone-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sage-dark text-white"><Icon name="chat" size={20}/></span><div><h2 className="font-serif text-[19px]">Need help setting up your kitchen?</h2><p className="mt-1 text-[11px] text-muted">Our partner team can help with verification, contracts and your profile.</p></div></div><Link to="/contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white hover:bg-sage"><Icon name="chat" size={14}/> Contact partner support</Link></div>
+        <div className="mt-7 flex flex-col gap-4 rounded-xl bg-stone-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sage-dark text-white"><Icon name="chat" size={20}/></span><div><h2 className="font-serif text-[19px]">Need help setting up your kitchen?</h2><p className="mt-1 text-[11px] text-muted">Our partner team can help with verification, contracts and your profile.</p></div></div><Link to="/chef/contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white hover:bg-sage"><Icon name="chat" size={14}/> Contact partner support</Link></div>
     </div>
 )
 
@@ -459,7 +502,7 @@ const ChefDashboard = () => {
     if (!user) return <Navigate to="/login?next=%2Fchef" replace/>
     if (user.role !== 'chef') return <Navigate to={user.role === 'user' ? '/my-bookings' : '/'} replace/>
 
-    const page = current === 'requests' ? <RequestWorkspace pendingCount={pendingQuery.data || 0}/> : current === 'bookings' ? <BookingWorkspace mode="bookings" pendingCount={pendingQuery.data || 0}/> : current === 'earnings' ? <Earnings/> : current === 'profile' ? profile && <ProfileEditor profile={profile} queryClient={queryClient}/> : current === 'timings' ? profile && <KitchenTimings profile={profile}/> : profile && <Overview profile={profile} queryClient={queryClient} pendingCount={pendingQuery.data || 0} navigate={navigate}/>
+    const page = current === 'requests' ? <RequestWorkspace pendingCount={pendingQuery.data || 0}/> : current === 'bookings' ? <BookingWorkspace mode="bookings" pendingCount={pendingQuery.data || 0}/> : current === 'earnings' ? <Earnings/> : current === 'profile' ? profile && <ProfileEditor profile={profile} queryClient={queryClient}/> : current === 'timings' ? profile && <KitchenTimings profile={profile}/> : current === 'contact' ? <Contact portal/> : profile && <Overview profile={profile} queryClient={queryClient} pendingCount={pendingQuery.data || 0} navigate={navigate}/>
 
     return (
         <div className="min-h-screen bg-[#fbfaf8] text-ink">
@@ -467,7 +510,7 @@ const ChefDashboard = () => {
                 <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between gap-3 px-4 lg:px-7">
                     <Link to="/chef" className="flex min-w-[205px] flex-col border-r border-line pr-5 leading-none"><span className="font-serif text-[22px] font-semibold tracking-tight text-rust">skillet <span className="text-ink">Chef Haazir</span></span><span className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted">Chef portal / Apna kitchen</span></Link>
                     <div className="hidden items-center gap-5 xl:flex">{TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `text-[11px] font-semibold ${isActive ? 'text-rust' : 'text-ink/70 hover:text-ink'}`}>{item.label}</NavLink>)}</div>
-                    <div className="flex items-center gap-2 sm:gap-3"><span className={`hidden rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide sm:inline-flex ${profile?.approvalStatus === 'approved' ? 'bg-sage-soft text-sage-dark' : 'bg-orange-100 text-rust'}`}>{profile?.approvalStatus === 'approved' ? 'Approved chef' : 'Account under setup'}</span><Link to="/contact" className="hidden items-center gap-1.5 rounded-lg bg-stone-100 px-3 py-2 text-[10px] font-semibold sm:flex"><Icon name="chat" size={13}/> Help & Concierge</Link><Link to="/chef/requests" aria-label={`${pendingQuery.data || 0} requests`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-stone-100"><Icon name="bell" size={17}/>{pendingQuery.data > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rust ring-2 ring-white"/>}</Link><div className="hidden text-right sm:block"><p className="max-w-28 truncate text-[10px] font-bold">{profile?.name || user.name}</p><p className="text-[9px] text-muted">Partner chef</p></div><button type="button" onClick={() => { logout(); navigate('/') }} aria-label="Log out" className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15}/></button></div>
+                    <div className="flex items-center gap-2 sm:gap-3"><span className={`hidden rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide sm:inline-flex ${profile?.approvalStatus === 'approved' ? 'bg-sage-soft text-sage-dark' : 'bg-orange-100 text-rust'}`}>{profile?.approvalStatus === 'approved' ? 'Approved chef' : 'Account under setup'}</span><Link to="/chef/contact" className="hidden items-center gap-1.5 rounded-lg bg-stone-100 px-3 py-2 text-[10px] font-semibold sm:flex"><Icon name="chat" size={13}/> Help & Concierge</Link><Link to="/chef/requests" aria-label={`${pendingQuery.data || 0} requests`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-stone-100"><Icon name="bell" size={17}/>{pendingQuery.data > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rust ring-2 ring-white"/>}</Link><div className="hidden text-right sm:block"><p className="max-w-28 truncate text-[10px] font-bold">{profile?.name || user.name}</p><p className="text-[9px] text-muted">Partner chef</p></div><button type="button" onClick={() => { logout(); navigate('/') }} aria-label="Log out" className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15}/></button></div>
                 </div>
                 <div className="flex gap-1 overflow-x-auto border-t border-line px-3 py-2 lg:hidden">{TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold ${isActive ? 'bg-sage-dark text-white' : 'text-muted hover:bg-stone-100'}`}>{item.label}</NavLink>)}</div>
             </header>
@@ -476,7 +519,7 @@ const ChefDashboard = () => {
                 <aside className="hidden border-r border-line bg-[#f6f4f0] px-3 py-6 lg:flex lg:flex-col">
                     <p className="flex items-center gap-2 px-3 text-[10px] font-semibold text-ink/75"><Icon name="pin" size={13} className="text-rust"/>{profile?.city || 'Your city'} kitchen hub</p>
                     <p className="mb-2 mt-8 px-3 text-[9px] font-bold uppercase tracking-[0.14em] text-muted">Workspace menu</p>
-                    <nav className="space-y-1">{NAV.map((item) => <PortalNavLink key={item.to} {...item} count={item.label === 'Requests' ? pendingQuery.data : 0}/>)}</nav>
+                    <nav className="space-y-1">{NAV.map((item) => <PortalNavLink key={item.to} {...item} count={0}/>)}</nav>
                     <div className="mt-auto space-y-4"><div className="rounded-lg bg-white px-3 py-3"><p className="flex items-center gap-2 text-[10px] font-bold text-muted"><Icon name="shield" size={13} className="text-sage"/> Profile verification</p><p className="mt-1 text-[10px]">{profile?.phoneVerified ? 'Phone verified' : 'In progress'}</p><div className="my-2 h-px bg-line"/><p className="flex items-center gap-2 text-[10px] font-bold text-muted"><Icon name="store" size={13} className="text-sage"/> Kitchen hub</p><p className="mt-1 text-[10px]">{profile?.city || 'Loading city'}</p></div><button type="button" onClick={() => { logout(); navigate('/') }} className="flex items-center gap-2 px-3 text-[11px] font-semibold text-muted hover:text-rust"><Icon name="logout" size={15}/> Log out</button></div>
                 </aside>
 

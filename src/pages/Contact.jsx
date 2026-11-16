@@ -191,7 +191,7 @@ const Faq = () => {
     )
 }
 
-const Assist = () => {
+const Assist = ({ portal = false }) => {
     const items = [
         contact.whatsapp && { icon: 'chat', label: 'WhatsApp', value: contact.whatsapp, href: `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}` },
         contact.email && { icon: 'mail', label: 'Official inquiries', value: contact.email, href: `mailto:${contact.email}` },
@@ -235,9 +235,9 @@ const Assist = () => {
             <div className="p-5 sm:p-6">
             <p className="text-[13px] text-muted">Help for home food lovers, chefs and grocery partners across Pakistan.</p>
             <div className="mt-4 space-y-2.5">
-                {[...items, ...shortcuts].map((r) => <Row key={r.label} {...r} />)}
+                {[...items, ...(!portal ? shortcuts : [])].map((r) => <Row key={r.label} {...r} />)}
             </div>
-            <Faq />
+            {!portal && <Faq />}
             <p className="mt-6 flex items-start gap-3 rounded-lg border border-line bg-white p-4 text-[12px] leading-relaxed text-muted">
                 <Icon name="shield" size={18} className="mt-0.5 shrink-0 text-sage" />
                 Every chef on Chef Haazir has a verified phone number, has signed our contract, and is approved by our team before their first booking.
@@ -299,8 +299,15 @@ const CityStrip = () => {
     )
 }
 
-const Contact = () => {
+const Contact = ({ portal = false }) => {
     const [sentTo, setSentTo] = useState(null)
+
+    if (portal) return (
+        <div className="pb-10">
+            <header className="mb-6"><p className="eyebrow">Partner support</p><h1 className="mt-1 font-serif text-[34px] font-semibold sm:text-[40px]">Help &amp; Concierge</h1><p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted">Contact the Chef Haazir partner team about your account, bookings, schedule or earnings. We usually reply within a day.</p></header>
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)] xl:items-start"><div className="space-y-4"><ContactForm onSent={setSentTo}/><AnimatePresence>{sentTo !== null && <SentCard name={sentTo} onAgain={() => setSentTo(null)}/>}</AnimatePresence></div><Assist portal/></div>
+        </div>
+    )
 
     return (
         <div className="pb-20 pt-10">

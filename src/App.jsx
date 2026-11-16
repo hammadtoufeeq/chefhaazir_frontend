@@ -14,6 +14,7 @@ import GroceryStore from './pages/GroceryStore'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import MyBookings from './pages/MyBookings'
+import BookingDetailsPage from './pages/BookingDetailsPage'
 import BookingRequest from './pages/BookingRequest'
 import ChefDashboard from './pages/ChefDashboard'
 import AdminDashboard from './pages/AdminDashboard'
@@ -58,6 +59,7 @@ const App = () => {
                         <Route path="/chefs" element={<Page><Chefs /></Page>} />
                         <Route path="/chefs/:id" element={<Page><ChefProfile /></Page>} />
                         <Route path="/my-bookings" element={<Page><MyBookings /></Page>} />
+                        <Route path="/my-bookings/:bookingId" element={<Page><BookingDetailsPage /></Page>} />
                         <Route path="/book/:chefId" element={<Page><BookingRequest /></Page>} />
                         <Route path="/about" element={<Page><About /></Page>} />
                         <Route path="/contact" element={<Page><Contact /></Page>} />
