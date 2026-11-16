@@ -4,6 +4,8 @@ import { useQuery, useQueries } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import api from '../lib/api'
 import { contact, WEB3FORMS_KEY } from '../constants/contact'
+import { images } from '../constants/images'
+import SafeImage from '../components/SafeImage'
 import { FREE_DELIVERY_FROM, DELIVERY_FEE } from '../constants/grocery'
 import { useAuth } from '../context/AuthContext'
 import Icon from '../components/Icon'
@@ -221,11 +223,18 @@ const Assist = () => {
     }
 
     return (
-        <aside className="rounded-xl border border-line bg-sand/70 p-5 sm:p-6 lg:sticky lg:top-24">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-rust">Direct assistance</p>
-            <h2 className="mt-1.5 font-serif text-[24px]">Concierge desk</h2>
-            <p className="mt-1 text-[13px] text-muted">Help for home food lovers, chefs and grocery partners across Pakistan.</p>
-            <div className="mt-5 space-y-2.5">
+        <aside className="overflow-hidden rounded-xl border border-line bg-sand/70 lg:sticky lg:top-24">
+            <div className="relative">
+                <SafeImage src={images.spiceBowls} alt="Bowls of spices and daals" className="h-36" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent" />
+                <div className="absolute inset-x-5 bottom-4 text-white sm:inset-x-6">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">Direct assistance</p>
+                    <h2 className="mt-1 font-serif text-[26px] leading-none">Concierge desk</h2>
+                </div>
+            </div>
+            <div className="p-5 sm:p-6">
+            <p className="text-[13px] text-muted">Help for home food lovers, chefs and grocery partners across Pakistan.</p>
+            <div className="mt-4 space-y-2.5">
                 {[...items, ...shortcuts].map((r) => <Row key={r.label} {...r} />)}
             </div>
             <Faq />
@@ -233,9 +242,14 @@ const Assist = () => {
                 <Icon name="shield" size={18} className="mt-0.5 shrink-0 text-sage" />
                 Every chef on Chef Haazir has a verified phone number, has signed our contract, and is approved by our team before their first booking.
             </p>
+            </div>
         </aside>
     )
 }
+
+// A dish photo for each city card (falls back by position)
+const cityPhoto = { Lahore: images.heroKarahi, Karachi: images.biryaniPlate, Islamabad: images.tikkaSkewers, Rawalpindi: images.pulao, Peshawar: images.tandoori, Multan: images.halwa }
+const spare = [images.curryBowls, images.rotiThali, images.breakfast]
 
 // One card per open city store, with its live number of chefs
 const CityStrip = () => {
@@ -253,19 +267,30 @@ const CityStrip = () => {
 
     return (
         <section className="mx-auto mt-16 max-w-7xl px-4 md:px-8">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
+                <div>
+                    <p className="eyebrow">Where we cook</p>
+                    <h2 className="mt-2 font-serif text-[30px] tracking-tight">Our city kitchens</h2>
+                </div>
+                <Link to="/grocery" className="flex items-center gap-1.5 text-[13px] font-semibold hover:text-rust">All city stores <Icon name="arrowRight" size={15} /></Link>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {stores.map((s, i) => (
                     <Reveal key={s._id} delay={i * 0.06}>
-                        <Link to={`/chefs?city=${encodeURIComponent(s.city)}`} className="group block h-full rounded-xl border border-line bg-white p-6 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift">
-                            <div className="flex items-start justify-between gap-3">
-                                <h3 className="font-serif text-[24px]">{s.city}</h3>
-                                <span className="rounded bg-sage-soft px-2 py-0.5 text-[10px] font-bold text-sage-dark">City store</span>
+                        <Link to={`/chefs?city=${encodeURIComponent(s.city)}`} className="group block h-full overflow-hidden rounded-xl border border-line bg-white shadow-card transition hover:-translate-y-1 hover:shadow-lift">
+                            <div className="relative">
+                                <SafeImage src={cityPhoto[s.city] || spare[i % spare.length]} alt={`Home food in ${s.city}`} className="h-40" imgClassName="transition-transform duration-700 group-hover:scale-105" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent" />
+                                <h3 className="absolute bottom-3 left-5 font-serif text-[28px] text-white">{s.city}</h3>
+                                <span className="absolute right-3 top-3 rounded bg-white/95 px-2 py-0.5 text-[10px] font-bold text-sage-dark">City store</span>
                             </div>
-                            <p className="mt-1 text-[13px] text-muted">{s.name} · groceries delivered to your chef</p>
-                            <p className="mt-4 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-rust">
-                                {counts[i]?.data !== undefined ? `${counts[i].data} verified ${counts[i].data === 1 ? 'chef' : 'chefs'}` : 'Verified chefs'}
-                                <Icon name="arrowRight" size={14} className="transition group-hover:translate-x-1" />
-                            </p>
+                            <div className="p-5">
+                                <p className="text-[13px] text-muted">{s.name} · groceries delivered to your chef</p>
+                                <p className="mt-4 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-rust">
+                                    {counts[i]?.data !== undefined ? `${counts[i].data} verified ${counts[i].data === 1 ? 'chef' : 'chefs'}` : 'Verified chefs'}
+                                    <Icon name="arrowRight" size={14} className="transition group-hover:translate-x-1" />
+                                </p>
+                            </div>
                         </Link>
                     </Reveal>
                 ))}
@@ -280,10 +305,35 @@ const Contact = () => {
     return (
         <div className="pb-20 pt-10">
             <div className="mx-auto max-w-7xl px-4 md:px-8">
-                <header>
-                    <p className="eyebrow">Rabta & concierge</p>
-                    <h1 className="mt-3 font-serif text-[46px] leading-none tracking-tight sm:text-[58px]">Baat karein<span className="text-rust">.</span></h1>
-                    <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted">We usually reply within a day. Whether you are planning a dawat, need help with a booking, or want to cook with us as a chef, our door is open.</p>
+                <header className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+                    <div>
+                        <p className="eyebrow">Rabta & concierge</p>
+                        <h1 className="mt-3 font-serif text-[46px] leading-none tracking-tight sm:text-[64px]">Baat karein<span className="text-rust">.</span></h1>
+                        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted">We usually reply within a day. Whether you are planning a dawat, need help with a booking, or want to cook with us as a chef, our door is open.</p>
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            {['Booking help', 'Dawat & events', 'Chef partners', 'Grocery stores'].map((t) => (
+                                <span key={t} className="rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-ink/75">{t}</span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Photo collage */}
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto w-full max-w-lg pb-10 pl-10 sm:pl-16">
+                        <div className="rotate-2 rounded-2xl bg-white p-2.5 shadow-lift ring-1 ring-line">
+                            <SafeImage src={images.foodTable} alt="Plates of home cooked food on a table" eager className="aspect-[4/3] rounded-xl" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 w-[46%] -rotate-3 rounded-xl bg-white p-2 shadow-lift ring-1 ring-line">
+                            <SafeImage src={images.rotiOnTawa} alt="Fresh roti being made on a tawa" eager className="aspect-square rounded-lg" />
+                        </div>
+                        <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
+                            className="absolute -top-3 right-4 flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-[12px] font-bold shadow-lift ring-1 ring-line">
+                            <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage opacity-60" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sage" /></span>
+                            We reply within a day
+                        </motion.span>
+                        <span className="absolute bottom-6 right-2 flex items-center gap-2 rounded-xl bg-sage-dark px-3.5 py-2.5 text-[12px] font-semibold text-white shadow-lift">
+                            <Icon name="mail" size={15} /> Every message read by our team
+                        </span>
+                    </motion.div>
                 </header>
 
                 <div className="mt-10 grid gap-6 lg:grid-cols-[1.45fr_1fr] lg:items-start">
