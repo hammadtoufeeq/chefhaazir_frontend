@@ -8,12 +8,12 @@ const pageList = (page, total) => {
     return sorted.flatMap((p, i) => (i && p - sorted[i - 1] > 1 ? ['…', p] : [p]))
 }
 
-const Pagination = ({ page, totalPages, onPage }) => {
+const Pagination = ({ page, totalPages, onPage, className = "mt-12 justify-center" }) => {
     if (totalPages <= 1) return null
     const btn = 'flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg border px-3 text-[13px] font-semibold transition disabled:pointer-events-none disabled:opacity-40'
     const idle = 'border-line bg-white hover:border-sage/50'
     return (
-        <nav aria-label="Pages" className="mt-12 flex items-center justify-center gap-2">
+        <nav aria-label="Pages" className={`flex flex-wrap items-center gap-2 ${className}`}>
             <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} className={`${btn} ${idle}`}><Icon name="arrowLeft" size={14} /> Prev</button>
             {pageList(page, totalPages).map((p, i) => p === '…'
                 ? <span key={`gap${i}`} className="px-1 text-muted">…</span>
