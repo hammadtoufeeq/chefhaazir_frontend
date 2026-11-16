@@ -6,6 +6,7 @@ import Footer from './components/Footer'
 import Home from './pages/Home'
 import ComingSoon from './pages/ComingSoon'
 import Chefs from './pages/Chefs'
+import ChefProfile from './pages/ChefProfile'
 import Grocery from './pages/Grocery'
 import GroceryStore from './pages/GroceryStore'
 
@@ -17,7 +18,6 @@ const Page = ({ children }) => (
 )
 
 const soon = [
-    ['/chefs/:id', 'Chef profile'],
     ['/book/:chefId', 'Booking request'],
     ['/about', 'About us'],
     ['/contact', 'Contact'],
@@ -49,6 +49,7 @@ const App = () => {
                     <Routes location={location} key={location.pathname}>
                         <Route path="/" element={<Page><Home /></Page>} />
                         <Route path="/chefs" element={<Page><Chefs /></Page>} />
+                        <Route path="/chefs/:id" element={<Page><ChefProfile /></Page>} />
                         <Route path="/grocery" element={<Page><Grocery /></Page>} />
                         <Route path="/grocery/:city" element={<Page><GroceryStore /></Page>} />
                         {soon.map(([path, title]) => (
