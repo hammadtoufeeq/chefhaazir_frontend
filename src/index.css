@@ -6,8 +6,8 @@
    sage  = primary action (search, book buttons, partner band)
    ------------------------------------------------------------------ */
 @theme {
-    --color-cream: #FBF7F0;       /* page background */
-    --color-sand: #F4EEE3;        /* alternate section band */
+    --color-cream: #FFFFFF;       /* page background */
+    --color-sand: #FFFFFF;        /* section and surface background */
     --color-line: #E8DFD0;        /* borders */
     --color-ink: #1E1B16;         /* text */
     --color-muted: #6F685D;       /* secondary text */
@@ -31,7 +31,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-    background-color: var(--color-cream);
+    background-color: #FFFFFF;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

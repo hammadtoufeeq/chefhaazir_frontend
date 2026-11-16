@@ -13,6 +13,7 @@ import Grocery from './pages/Grocery'
 import GroceryStore from './pages/GroceryStore'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
+import MyBookings from './pages/MyBookings'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -23,7 +24,6 @@ const Page = ({ children }) => (
 
 const soon = [
     ['/book/:chefId', 'Booking request'],
-    ['/my-bookings', 'My bookings'],
     ['/chef', 'Chef dashboard'],
     ['/store', 'Store dashboard'],
     ['/admin', 'Admin dashboard']
@@ -54,6 +54,7 @@ const App = () => {
                         <Route path="/" element={<Page><Home /></Page>} />
                         <Route path="/chefs" element={<Page><Chefs /></Page>} />
                         <Route path="/chefs/:id" element={<Page><ChefProfile /></Page>} />
+                        <Route path="/my-bookings" element={<Page><MyBookings /></Page>} />
                         <Route path="/about" element={<Page><About /></Page>} />
                         <Route path="/contact" element={<Page><Contact /></Page>} />
                         <Route path="/grocery" element={<Page><Grocery /></Page>} />
