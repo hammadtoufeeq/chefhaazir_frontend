@@ -87,6 +87,11 @@ const FilterPanel = ({ applied, onApply, onClear }) => {
                             </button>
                         )
                     })}
+                    {draft.cuisine && !cuisines.includes(draft.cuisine) && (
+                        <button type="button" aria-pressed="true" onClick={() => setDraft({ ...draft, cuisine: '' })} className="flex items-center gap-1 rounded-full border border-sage-dark bg-sage-dark px-3 py-1.5 text-[12px] font-semibold text-white">
+                            <Icon name="check" size={13} strokeWidth={2.4} /> {draft.cuisine}
+                        </button>
+                    )}
                 </div>
             </div>
 

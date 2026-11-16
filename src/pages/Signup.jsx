@@ -52,6 +52,7 @@ const roleKeys = Object.keys(roles)
 
 // ---------------- Validation (same rules as the backend) ----------------
 const PHONE = /^(03\d{9}|\+923\d{9})$/
+const cuisineOptions = [...cuisines, 'Other']
 const check = {
     name: (v) => (v.trim().length < 2 ? 'Name must be at least 2 characters' : v.trim().length > 50 ? 'Name cannot be more than 50 characters' : ''),
     email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Please enter a valid email'),
@@ -67,7 +68,7 @@ const check = {
         if (!Number.isInteger(n)) return 'Use a whole number'
         return n < 500 || n > 20000 ? 'Rate must be between Rs 500 and Rs 20,000' : ''
     },
-    bio: (v) => (v.trim().length > 300 ? 'Bio cannot be more than 300 characters' : '')
+    bio: (v) => (v.trim().length < 10 ? 'Write at least 10 characters about your cooking' : v.trim().length > 300 ? 'Bio cannot be more than 300 characters' : '')
 }
 const fieldsFor = {
     user: ['name', 'email', 'password', 'phone', 'city', 'address'],
@@ -189,7 +190,7 @@ const FormStep = ({ role, onBack }) => {
 
     const [form, setForm] = useState({
         name: '', email: '', password: '', phone: '', city: browsingCity || '', address: '',
-        storeName: '', cuisines: [], ratePerSlot: '', bio: ''
+        storeName: '', cuisines: [], customCuisine: '', ratePerSlot: '', bio: ''
     })
     const [touched, setTouched] = useState({})
     const [showPw, setShowPw] = useState(false)
@@ -197,11 +198,24 @@ const FormStep = ({ role, onBack }) => {
     const [serverError, setServerError] = useState('')
 
     const fields = fieldsFor[role]
-    const errors = useMemo(() => Object.fromEntries(fields.map((f) => [f, check[f](form[f])])), [form, fields])
+    const errors = useMemo(() => {
+        const result = Object.fromEntries(fields.map((f) => [f, check[f](form[f])]))
+        if (role === 'chef' && form.cuisines.includes('Other')) {
+            const custom = form.customCuisine.trim()
+            result.cuisines = custom.length < 2
+                ? 'Enter an additional cuisine (at least 2 characters)'
+                : custom.length > 40
+                    ? 'Cuisine names can be up to 40 characters'
+                    : form.cuisines.some((c) => c !== 'Other' && c.toLowerCase() === custom.toLowerCase())
+                        ? 'This cuisine is already selected'
+                        : result.cuisines
+        }
+        return result
+    }, [form, fields, role])
     const show = (f) => (touched[f] ? errors[f] : '')
     const set = (f) => (e) => setForm({ ...form, [f]: e.target.value })
     const blur = (f) => () => setTouched((t) => ({ ...t, [f]: true }))
-    const done = fields.filter((f) => !errors[f] && (f === 'bio' || (Array.isArray(form[f]) ? form[f].length : form[f]))).length
+    const done = fields.filter((f) => !errors[f] && (Array.isArray(form[f]) ? form[f].length : form[f])).length
     const progress = Math.round((done / fields.length) * 100)
 
     // Grocery owners: warn when the city already has an approved store
@@ -215,7 +229,7 @@ const FormStep = ({ role, onBack }) => {
     const toggleCuisine = (c) => {
         const has = form.cuisines.includes(c)
         if (!has && form.cuisines.length >= 5) return
-        setForm({ ...form, cuisines: has ? form.cuisines.filter((x) => x !== c) : [...form.cuisines, c] })
+        setForm({ ...form, cuisines: has ? form.cuisines.filter((x) => x !== c) : [...form.cuisines, c], ...(c === 'Other' && has ? { customCuisine: '' } : {}) })
         setTouched((t) => ({ ...t, cuisines: true }))
     }
 
@@ -225,14 +239,15 @@ const FormStep = ({ role, onBack }) => {
         setServerError('')
         const firstBad = fields.find((f) => errors[f])
         if (firstBad) {
-            document.getElementById(`su-${firstBad}`)?.focus()
+            const target = firstBad === 'cuisines' && form.cuisines.includes('Other') ? 'su-customCuisine' : `su-${firstBad}`
+            document.getElementById(target)?.focus()
             return
         }
         const body = Object.fromEntries(fields.map((f) => [f, typeof form[f] === 'string' ? form[f].trim() : form[f]]))
         body.phone = body.phone.replace(/[\s-]/g, '')
         if (role === 'chef') {
             body.ratePerSlot = Number(body.ratePerSlot)
-            if (!body.bio) delete body.bio
+            body.cuisines = body.cuisines.map((c) => c === 'Other' ? form.customCuisine.trim() : c)
         }
         setSubmitting(true)
         try {
@@ -357,7 +372,7 @@ const FormStep = ({ role, onBack }) => {
                                         <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${form.cuisines.length ? 'bg-rust-soft text-rust' : 'text-muted'}`}>{form.cuisines.length}/5 selected</span>
                                     </div>
                                     <div id="su-cuisines" tabIndex={-1} role="group" aria-labelledby="su-cuisines-label" className="mt-2 flex flex-wrap gap-2 outline-none">
-                                        {cuisines.map((c) => {
+                                        {cuisineOptions.map((c) => {
                                             const on = form.cuisines.includes(c)
                                             const full = !on && form.cuisines.length >= 5
                                             return (
@@ -368,7 +383,12 @@ const FormStep = ({ role, onBack }) => {
                                             )
                                         })}
                                     </div>
-                                    {show('cuisines') && <p className="mt-1.5 text-[12px] text-rust">{errors.cuisines}</p>}
+                                    {form.cuisines.includes('Other') && (
+                                        <Field id="su-customCuisine" label="Add your cuisine" error={show('cuisines')} hint="Type one cuisine or cooking style we haven’t listed (up to 40 characters).">
+                                            <input id="su-customCuisine" value={form.customCuisine} onChange={set('customCuisine')} onBlur={blur('cuisines')} maxLength={40} placeholder="e.g. Afghan, Kashmiri, or Mughlai" className={inputCls(show('cuisines'))} />
+                                        </Field>
+                                    )}
+                                    {show('cuisines') && !form.cuisines.includes('Other') && <p className="mt-1.5 text-[12px] text-rust">{errors.cuisines}</p>}
                                 </div>
                                 <Field id="su-ratePerSlot" label="Rate per 2-hour slot" error={show('ratePerSlot')} hint="Allowed range: Rs 500 – Rs 20,000. You keep 90%.">
                                     <span className="relative block">
@@ -378,9 +398,9 @@ const FormStep = ({ role, onBack }) => {
                                 </Field>
                                 <div className="hidden sm:block" />
                                 <div className="sm:col-span-2">
-                                    <Field id="su-bio" label="Bio (optional)" error={show('bio')} aside={<span className={`text-[11px] font-bold ${form.bio.length > 300 ? 'text-rust' : 'text-muted'}`}>{form.bio.length}/300</span>}
-                                        hint="Shown on your profile. Tell customers what you cook best.">
-                                        <textarea id="su-bio" rows={3} value={form.bio} onChange={set('bio')} onBlur={blur('bio')} placeholder="e.g. Punjabi handi, tawa roti and family-recipe biryani for over 20 years." className={inputCls(show('bio'), 'resize-none')} />
+                                    <Field id="su-bio" label="Cooking bio (required)" error={show('bio')} aside={<span className={`text-[11px] font-bold ${form.bio.length > 300 ? 'text-rust' : 'text-muted'}`}>{form.bio.length}/300</span>}
+                                        hint="Required. Tell customers about your cooking experience, specialties, or signature dishes.">
+                                        <textarea id="su-bio" required minLength={10} maxLength={300} rows={3} value={form.bio} onChange={set('bio')} onBlur={blur('bio')} placeholder="e.g. I make Punjabi handi, tawa roti and family-recipe biryani…" className={inputCls(show('bio'), 'resize-none')} />
                                     </Field>
                                 </div>
                             </>

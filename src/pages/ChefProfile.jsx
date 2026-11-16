@@ -7,6 +7,7 @@ import { todayInPakistan, addDays, dateParts, slotLabel } from '../lib/time'
 import { chefPhoto } from '../constants/images'
 import { cuisineDishes } from '../constants/cuisines'
 import { useAuth } from '../context/AuthContext'
+import { hasPendingSlotRequest } from '../lib/bookings'
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import Reveal from '../components/Reveal'
@@ -57,9 +58,19 @@ const BookingCard = ({ chef }) => {
         refetchInterval: 60 * 1000
     })
 
+    const pendingRequests = useQuery({
+        queryKey: ['customer-pending-bookings', user?.id],
+        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', page: 1, limit: 50 } })).data.bookings,
+        enabled: user?.role === 'user',
+        refetchInterval: 30 * 1000
+    })
+
     const pickDate = (d) => { setDate(d); setSlot('') }
-    const chosen = slots?.find((s) => s.slot === slot && s.status === 'available') ? slot : ''
-    const freeCount = slots?.filter((s) => s.status === 'available').length ?? 0
+    const checkingPending = user?.role === 'user' && (pendingRequests.isFetching || pendingRequests.isError)
+    const hasPending = (slotValue) => hasPendingSlotRequest(pendingRequests.data, chef.id, date, slotValue)
+    const chosen = !checkingPending && slots?.find((s) => s.slot === slot && s.status === 'available' && !hasPending(s.slot)) ? slot : ''
+    const freeCount = slots?.filter((s) => s.status === 'available' && !hasPending(s.slot)).length ?? 0
+    const pendingForDate = slots?.find((s) => hasPending(s.slot))
     const month = dateParts(date)
 
     const target = `/book/${chef.id}?date=${date}&slot=${chosen}`
@@ -78,7 +89,7 @@ const BookingCard = ({ chef }) => {
                     <p className="leading-none"><span className="font-serif text-[30px] font-semibold text-rust">Rs {chef.ratePerSlot.toLocaleString()}</span> <span className="text-[13px] text-muted">/ 2-hour slot</span></p>
                     <p className="mt-2 text-[12px] text-muted">One fixed price for the visit. Groceries, if you add any, are extra.</p>
                 </div>
-                {!isLoading && (
+                {!isLoading && !checkingPending && (
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${freeCount ? 'bg-sage-soft text-sage-dark' : 'bg-line/70 text-ink/60'}`}>
                         {freeCount ? `${freeCount} ${freeCount === 1 ? 'slot' : 'slots'} free` : 'Fully booked'}
                     </span>
@@ -122,20 +133,34 @@ const BookingCard = ({ chef }) => {
                     <div className="mt-3 grid grid-cols-2 gap-2">
                         {(slots || Array.from({ length: 7 }, (_, i) => ({ slot: i }))).map((s, i) => {
                             if (isLoading) return <div key={i} className={`h-[58px] animate-pulse rounded-lg bg-sand ${i === 6 ? 'col-span-2' : ''}`} />
-                            const free = s.status === 'available'
+                            const pending = hasPending(s.slot)
+                            const free = s.status === 'available' && !pending && !checkingPending
                             const active = chosen === s.slot
                             const note = { booked: 'Booked', too_late: 'Too soon', too_far: 'Too far' }[s.status]
                             return (
                                 <button key={s.slot} type="button" disabled={!free} onClick={() => setSlot(s.slot)} aria-pressed={active}
-                                    className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left transition ${i === 6 ? 'col-span-2' : ''} ${active ? 'border-sage-dark bg-sage-dark text-white shadow-sm' : free ? 'border-line bg-white hover:border-sage/60' : 'cursor-not-allowed border-transparent bg-sand/70 text-ink/35'}`}>
+                                    className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left transition ${i === 6 ? 'col-span-2' : ''} ${active ? 'border-sage-dark bg-sage-dark text-white shadow-sm' : free ? 'border-line bg-white hover:border-sage/60' : pending ? 'cursor-not-allowed border-amber-200 bg-amber-50 text-amber-900' : 'cursor-not-allowed border-transparent bg-sand/70 text-ink/35'}`}>
                                     <span>
-                                        <span className={`block whitespace-nowrap text-[14px] font-bold ${free ? '' : 'line-through'}`}>{shortSlot(s.slot)}</span>
-                                        <span className={`block text-[11px] ${active ? 'text-white/75' : 'text-muted'} ${free ? '' : 'opacity-60'}`}>{slotMood[s.slot]}</span>
+                                        <span className={`block whitespace-nowrap text-[14px] font-bold ${!free && !pending ? 'line-through' : ''}`}>{shortSlot(s.slot)}</span>
+                                        <span className={`block text-[11px] ${active ? 'text-white/75' : pending ? 'text-amber-800' : 'text-muted'} ${free || pending ? '' : 'opacity-60'}`}>{pending ? 'Request sent · awaiting reply' : slotMood[s.slot]}</span>
                                     </span>
-                                    {active ? <Icon name="checkCircle" size={17} /> : note && <span className="text-[9px] font-bold uppercase tracking-wide">{note}</span>}
+                                    {active ? <Icon name="checkCircle" size={17} /> : pending ? <Icon name="clock" size={15} /> : note && <span className="text-[9px] font-bold uppercase tracking-wide">{note}</span>}
                                 </button>
                             )
                         })}
+                    </div>
+                )}
+
+                {pendingForDate && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-[12px] leading-relaxed text-amber-900">
+                        <Icon name="clock" size={15} className="mt-0.5 shrink-0" />
+                        You already sent a request for this chef on {month.day}, {month.date} {month.month} at {shortSlot(pendingForDate.slot)}. That slot stays unavailable until the chef responds.
+                        <Link to="/my-bookings" className="shrink-0 font-bold underline">View request</Link>
+                    </div>
+                )}
+                {user?.role === 'user' && pendingRequests.isError && (
+                    <div className="mt-3 rounded-lg border border-rust/20 bg-rust-soft/50 p-3 text-[12px] text-rust-dark">
+                        We couldn’t check your pending requests, so booking is paused. <button type="button" onClick={() => pendingRequests.refetch()} className="font-bold underline">Try again</button>
                     </div>
                 )}
 
@@ -304,7 +329,7 @@ const ChefProfile = () => {
                                         </div>
                                         <div className="p-4">
                                             <h3 className="font-serif text-[18px]">{c}</h3>
-                                            <p className="mt-1 text-[13px] leading-relaxed text-muted">{cuisineDishes[c]}</p>
+                                            <p className="mt-1 text-[13px] leading-relaxed text-muted">{cuisineDishes[c] || `Specialties selected by ${name}`}</p>
                                         </div>
                                     </article>
                                 </Reveal>

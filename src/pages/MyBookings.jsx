@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { errorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -144,12 +144,13 @@ const BookingDetails = ({ id, onClose }) => {
 
 const MyBookings = () => {
     const { user, isLoading: authLoading } = useAuth()
+    const location = useLocation()
     const queryClient = useQueryClient()
     const [filter, setFilter] = useState('all')
     const [page, setPage] = useState(1)
     const [search, setSearch] = useState('')
     const [detailId, setDetailId] = useState(null)
-    const [notice, setNotice] = useState('')
+    const [notice, setNotice] = useState(location.state?.bookingNotice || '')
 
     const { data, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['my-bookings', filter, page],

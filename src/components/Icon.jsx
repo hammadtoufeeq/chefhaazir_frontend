@@ -29,6 +29,7 @@ const paths = {
     lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>,
     undo: <><path d="M9 14 4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></>,
     plus: <path d="M12 5v14M5 12h14" />,
+    minus: <path d="M5 12h14" />,
     xCircle: <><circle cx="12" cy="12" r="9" /><path d="m9 9 6 6m0-6-6 6" /></>,
     mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></>,
     chat: <path d="M4 5h16v11H9l-5 4V5Z" />,

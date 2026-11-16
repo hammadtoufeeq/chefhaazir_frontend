@@ -14,6 +14,8 @@ import GroceryStore from './pages/GroceryStore'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import MyBookings from './pages/MyBookings'
+import BookingRequest from './pages/BookingRequest'
+import ChefDashboard from './pages/ChefDashboard'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -23,7 +25,6 @@ const Page = ({ children }) => (
 )
 
 const soon = [
-    ['/book/:chefId', 'Booking request'],
     ['/chef', 'Chef dashboard'],
     ['/store', 'Store dashboard'],
     ['/admin', 'Admin dashboard']
@@ -41,6 +42,8 @@ const App = () => {
         window.scrollTo(0, 0)
     }, [location.pathname, location.hash])
 
+    if (location.pathname === '/chef' || location.pathname.startsWith('/chef/')) return <ChefDashboard />
+
     // Sign-up and login have their own quiet layout, without the main navbar and footer
     if (location.pathname === '/signup') return <div className="overflow-x-clip"><Signup /></div>
     if (location.pathname === '/login') return <div className="overflow-x-clip"><Login /></div>
@@ -55,6 +58,7 @@ const App = () => {
                         <Route path="/chefs" element={<Page><Chefs /></Page>} />
                         <Route path="/chefs/:id" element={<Page><ChefProfile /></Page>} />
                         <Route path="/my-bookings" element={<Page><MyBookings /></Page>} />
+                        <Route path="/book/:chefId" element={<Page><BookingRequest /></Page>} />
                         <Route path="/about" element={<Page><About /></Page>} />
                         <Route path="/contact" element={<Page><Contact /></Page>} />
                         <Route path="/grocery" element={<Page><Grocery /></Page>} />
