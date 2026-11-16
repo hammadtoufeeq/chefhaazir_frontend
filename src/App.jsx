@@ -6,6 +6,8 @@ import Footer from './components/Footer'
 import Home from './pages/Home'
 import ComingSoon from './pages/ComingSoon'
 import Chefs from './pages/Chefs'
+import Grocery from './pages/Grocery'
+import GroceryStore from './pages/GroceryStore'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -17,8 +19,6 @@ const Page = ({ children }) => (
 const soon = [
     ['/chefs/:id', 'Chef profile'],
     ['/book/:chefId', 'Booking request'],
-    ['/grocery', 'Grocery store'],
-    ['/grocery/:city', 'Grocery store'],
     ['/about', 'About us'],
     ['/contact', 'Contact'],
     ['/login', 'Login'],
@@ -49,6 +49,8 @@ const App = () => {
                     <Routes location={location} key={location.pathname}>
                         <Route path="/" element={<Page><Home /></Page>} />
                         <Route path="/chefs" element={<Page><Chefs /></Page>} />
+                        <Route path="/grocery" element={<Page><Grocery /></Page>} />
+                        <Route path="/grocery/:city" element={<Page><GroceryStore /></Page>} />
                         {soon.map(([path, title]) => (
                             <Route key={path} path={path} element={<Page><ComingSoon title={title} /></Page>} />
                         ))}
