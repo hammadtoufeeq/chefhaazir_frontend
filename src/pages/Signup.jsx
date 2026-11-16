@@ -242,7 +242,9 @@ const FormStep = ({ role, onBack }) => {
             await queryClient.invalidateQueries({ queryKey: ['me'] })
             if (role === 'user') setCity(body.city)
             const next = params.get('next')
-            navigate(role === 'user' && next?.startsWith('/') ? next : homeFor[role].to, { replace: true })
+            // Customers go to Home (or back to the booking they started); partners go to their dashboard
+            const customerTarget = next?.startsWith('/') ? next : '/'
+            navigate(role === 'user' ? customerTarget : homeFor[role].to, { replace: true })
         } catch (err) {
             setServerError(err.response?.status === 409 ? 'An account with this email already exists. Try logging in instead.' : errorMessage(err))
             setSubmitting(false)
