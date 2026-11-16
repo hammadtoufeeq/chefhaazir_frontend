@@ -11,6 +11,7 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import Grocery from './pages/Grocery'
 import GroceryStore from './pages/GroceryStore'
+import Signup from './pages/Signup'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -22,7 +23,6 @@ const Page = ({ children }) => (
 const soon = [
     ['/book/:chefId', 'Booking request'],
     ['/login', 'Login'],
-    ['/signup', 'Sign up'],
     ['/my-bookings', 'My bookings'],
     ['/chef', 'Chef dashboard'],
     ['/store', 'Store dashboard'],
@@ -40,6 +40,11 @@ const App = () => {
         }
         window.scrollTo(0, 0)
     }, [location.pathname, location.hash])
+
+    // Sign-up has its own quiet layout, without the main navbar and footer
+    if (location.pathname === '/signup') {
+        return <div className="overflow-x-clip"><Signup /></div>
+    }
 
     return (
         <div className="flex min-h-screen flex-col overflow-x-clip">
