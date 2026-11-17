@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { CityProvider } from './context/CityContext'
 import App from './App'
+import ToastViewport from './components/ToastViewport'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')).render(
                 <AuthProvider>
                     <CityProvider>
                         <App />
+                        <ToastViewport />
                     </CityProvider>
                 </AuthProvider>
             </BrowserRouter>

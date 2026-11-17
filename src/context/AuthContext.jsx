@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import toast from '../lib/toast'
 
 const AuthContext = createContext(null)
 
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     })
 
     return (
-        <AuthContext.Provider value={{ user: user ?? null, isLoading, logout: logout.mutate }}>
+        <AuthContext.Provider value={{ user: user ?? null, isLoading, logout: () => { toast.success('You have been logged out.', 'Logged out'); logout.mutate() } }}>
             {children}
         </AuthContext.Provider>
     )

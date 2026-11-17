@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { errorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -27,6 +27,7 @@ const Pill = ({ children, tone = 'sage' }) => <span className={`inline-flex roun
 
 const AdminDashboard = () => {
     const { user, isLoading: authLoading, logout } = useAuth()
+    const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [searchParams, setSearchParams] = useSearchParams()
     const validTabs = navItems.map(([key]) => key)
@@ -42,6 +43,7 @@ const AdminDashboard = () => {
     const [confirmDelete, setConfirmDelete] = useState(null)
     const [issuedCode, setIssuedCode] = useState(null)
     const [notice, setNotice] = useState('')
+    const [refreshing, setRefreshing] = useState(false)
     const [settingsDraft, setSettingsDraft] = useState(null)
 
     const stats = useQuery({ queryKey: ['admin-stats'], queryFn: async () => (await api.get('/admin/stats')).data, enabled: user?.role === 'admin', refetchInterval: 30_000, refetchOnWindowFocus: true })
@@ -64,7 +66,18 @@ const AdminDashboard = () => {
         if (validTabs.includes(urlTab) && urlTab !== tab) setTab(urlTab)
     }, [searchParams, tab])
 
-    const refreshAdmin = () => ['admin-stats', 'admin-chefs', 'admin-stores', 'admin-chef-payments', 'admin-settlements', 'admin-issues', 'admin-closed-issues', 'admin-users', 'admin-bookings', 'admin-settings'].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }))
+    const refreshAdmin = async () => {
+        if (refreshing) return
+        setRefreshing(true)
+        try {
+            await queryClient.refetchQueries({ type: 'active' })
+            setNotice('Admin data refreshed.')
+        } catch {
+            setNotice('Could not refresh admin data. Please try again.')
+        } finally {
+            setRefreshing(false)
+        }
+    }
     const actionMutation = useMutation({
         mutationFn: async ({ action, id, value, override = false }) => {
             if (action === 'chef-approval') return (await api.patch(`/admin/chefs/${id}/approval`, { status: value })).data
@@ -137,7 +150,7 @@ const AdminDashboard = () => {
 
     return <div className="min-h-screen bg-[#fbfaf8] text-ink">
         <div className="min-w-0">
-            <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur"><div className="flex min-h-[68px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-7"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rust text-white"><Icon name="pot" size={22}/></span><div><p className="font-serif text-[20px] font-semibold leading-none text-rust">Chef Haazir</p><p className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted">Admin console</p></div><span className="mx-2 hidden h-9 w-px bg-line lg:block"/><div className="hidden lg:block"><h1 className="font-serif text-[20px] font-semibold">Operations Portal</h1><span className="text-[9px] text-muted">Lahore Hub · All Clusters</span></div></div><div className="flex items-center gap-2"><span className="hidden text-right text-[10px] text-muted sm:block">{user.name || 'Administrator'}<span className="block">Lahore Central Ops</span></span><button type="button" onClick={refreshAdmin} aria-label="Refresh admin data" className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white text-rust hover:bg-stone-50"><Icon name="undo" size={16}/></button><button type="button" onClick={() => { logout(); window.location.assign('/') }} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-[10px] font-semibold text-ink/75 hover:bg-stone-50"><Icon name="logout" size={14}/><span className="hidden sm:inline">Log out</span></button></div></div><nav aria-label="Admin navigation" className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-4 pb-2 sm:px-7 xl:px-8">{navItems.map(([key, label, icon]) => <button key={key} type="button" aria-current={tab === key ? 'page' : undefined} onClick={() => changeTab(key)} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-semibold transition sm:px-4 sm:text-[11px] ${tab === key ? 'bg-rust text-white shadow-sm' : 'text-ink/70 hover:bg-stone-100 hover:text-ink'}`}><Icon name={icon} size={15}/>{label}{key === 'approvals' && ((waiting.pendingChefs || 0) + (waiting.pendingStores || 0)) > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${tab === key ? 'bg-white/20' : 'bg-stone-200'}`}>{(waiting.pendingChefs || 0) + (waiting.pendingStores || 0)}</span>}{key === 'issues' && waiting.openIssues > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${tab === key ? 'bg-white/20' : 'bg-red-100 text-red-800'}`}>{waiting.openIssues}</span>}</button>)}</nav></header>
+            <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur"><div className="flex min-h-[68px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-7"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rust text-white"><Icon name="pot" size={22}/></span><div><p className="font-serif text-[20px] font-semibold leading-none text-rust">Chef Haazir</p><p className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted">Admin console</p></div><span className="mx-2 hidden h-9 w-px bg-line lg:block"/><div className="hidden lg:block"><h1 className="font-serif text-[20px] font-semibold">Operations Portal</h1><span className="text-[9px] text-muted">Lahore Hub · All Clusters</span></div></div><div className="flex items-center gap-2"><span className="hidden text-right text-[10px] text-muted sm:block">{user.name || 'Administrator'}<span className="block">Lahore Central Ops</span></span><button type="button" onClick={refreshAdmin} disabled={refreshing} aria-label="Refresh admin data" className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white text-rust transition hover:bg-stone-50 hover:shadow-sm disabled:cursor-wait disabled:opacity-60"><Icon name="refresh" size={16} className={refreshing ? 'animate-spin' : ''}/><span className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-md bg-ink px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-lg group-hover:block group-focus-visible:block">Refresh</span></button><button type="button" onClick={() => { logout(); navigate('/') }} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-[10px] font-semibold text-ink/75 hover:bg-stone-50"><Icon name="logout" size={14}/><span className="hidden sm:inline">Log out</span></button></div></div><nav aria-label="Admin navigation" className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-4 pb-2 sm:px-7 xl:px-8">{navItems.map(([key, label, icon]) => <button key={key} type="button" aria-current={tab === key ? 'page' : undefined} onClick={() => changeTab(key)} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-semibold transition sm:px-4 sm:text-[11px] ${tab === key ? 'bg-rust text-white shadow-sm' : 'text-ink/70 hover:bg-stone-100 hover:text-ink'}`}><Icon name={icon} size={15}/>{label}{key === 'approvals' && ((waiting.pendingChefs || 0) + (waiting.pendingStores || 0)) > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${tab === key ? 'bg-white/20' : 'bg-stone-200'}`}>{(waiting.pendingChefs || 0) + (waiting.pendingStores || 0)}</span>}{key === 'issues' && waiting.openIssues > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${tab === key ? 'bg-white/20' : 'bg-red-100 text-red-800'}`}>{waiting.openIssues}</span>}</button>)}</nav></header>
             <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-7 sm:py-8 xl:px-8">
                 {!['approvals', 'payments', 'issues', 'bookings'].includes(tab) && <>
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5"><div><div className="flex items-center gap-2"><Pill>Live sync · Lahore hub</Pill><span className="text-[9px] text-muted">Updated {stats.dataUpdatedAt ? new Date(stats.dataUpdatedAt).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></div><h2 className="mt-2 font-serif text-[34px] font-semibold leading-[1.05] tracking-tight sm:text-[42px]">{tab === 'overview' ? 'Central Operations & Lahore Hub Overview' : mainTitle}</h2><p className="mt-2 max-w-3xl text-[12px] leading-relaxed text-muted">{tab === 'overview' ? 'Live ledger, partner onboarding backlog, and booking health across your service hubs.' : `Review and manage Chef Haazir ${mainTitle.toLowerCase()} using current platform records.`}</p></div>{tab === 'overview' && <button type="button" onClick={exportAudit} className="inline-flex items-center gap-2 rounded-lg bg-rust px-4 py-2.5 text-[11px] font-bold text-white hover:bg-rust-dark"><Icon name="wallet" size={15}/>Export financial audit</button>}</div>

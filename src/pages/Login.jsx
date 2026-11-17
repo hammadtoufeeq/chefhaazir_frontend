@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import api from '../lib/api'
+import toast from '../lib/toast'
 import { images } from '../constants/images'
 import { useAuth, homeFor } from '../context/AuthContext'
 import SafeImage from '../components/SafeImage'
@@ -51,6 +52,7 @@ const Login = () => {
         try {
             const { data } = await api.post('/auth/login', { email: email.trim(), password })
             await queryClient.invalidateQueries({ queryKey: ['me'] })
+            toast.success(`Welcome back${data.user?.name ? `, ${data.user.name}` : ''}!`, 'Login successful')
             navigate(targetFor(data.user.role, next), { replace: true })
         } catch (err) {
             const status = err.response?.status
