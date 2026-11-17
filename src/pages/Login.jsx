@@ -14,10 +14,8 @@ const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
 // Where to go after logging in: back to the page that sent them here, otherwise
 // customers go Home and partners go to their dashboard
 const targetFor = (role, next) => {
-    if (next?.startsWith('/') && !next.startsWith('//')) {
-        // Booking links are only for customers
-        if (!next.startsWith('/book/') || role === 'user') return next
-    }
+    // Only customers can return to a requested customer page or booking flow.
+    if (role === 'user' && next?.startsWith('/') && !next.startsWith('//')) return next
     return role === 'user' ? '/' : homeFor[role]?.to || '/'
 }
 

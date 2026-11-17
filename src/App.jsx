@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -18,6 +18,7 @@ import BookingDetailsPage from './pages/BookingDetailsPage'
 import BookingRequest from './pages/BookingRequest'
 import ChefDashboard from './pages/ChefDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import { useAuth } from './context/AuthContext'
 
 // Each page fades in when the route changes
 const Page = ({ children }) => (
@@ -32,6 +33,7 @@ const soon = [
 
 const App = () => {
     const location = useLocation()
+    const { user, isLoading } = useAuth()
 
     // New page starts at the top; links like /#how-it-works scroll to that section
     useEffect(() => {
@@ -41,6 +43,8 @@ const App = () => {
         }
         window.scrollTo(0, 0)
     }, [location.pathname, location.hash])
+
+    if (!isLoading && user?.role === 'chef' && !location.pathname.startsWith('/chef')) return <Navigate to="/chef" replace />
 
     if (location.pathname === '/chef' || location.pathname.startsWith('/chef/')) return <ChefDashboard />
     if (location.pathname === '/admin') return <AdminDashboard />

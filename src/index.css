@@ -21,8 +21,8 @@
     --color-sage-soft: #E1EBE4;
     --color-band: #4B6A5A;        /* big green partner section */
 
-    --font-serif: "Newsreader", Georgia, serif;
-    --font-sans: "Manrope", system-ui, sans-serif;
+    --font-serif: "Fraunces", "Noto Nastaliq Urdu", serif;
+    --font-sans: "DM Sans", "Noto Nastaliq Urdu", sans-serif;
 
     --shadow-card: 0 1px 2px rgb(60 45 20 / 0.04), 0 8px 24px rgb(60 45 20 / 0.06);
     --shadow-lift: 0 2px 4px rgb(60 45 20 / 0.06), 0 20px 40px rgb(60 45 20 / 0.12);
@@ -34,7 +34,50 @@ body {
     background-color: #FFFFFF;
     color: var(--color-ink);
     font-family: var(--font-sans);
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+}
+
+.font-serif {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+}
+
+blockquote,
+.font-serif.italic,
+em.font-serif {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: normal;
+}
+
+p.font-serif.text-\[15px\],
+p.font-serif.text-\[24px\] {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: normal;
+}
+
+nav a { font-weight: 500; }
+button, label { font-family: var(--font-sans); font-weight: 600; }
+input, select, textarea { font-family: var(--font-sans); }
+
+:lang(ur),
+:lang(ur) * {
+    font-family: "Noto Nastaliq Urdu", serif;
+    font-weight: 500;
+    line-height: 2;
 }
 
 /* Small uppercase label above section headings */
