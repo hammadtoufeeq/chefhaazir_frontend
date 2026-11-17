@@ -18,7 +18,7 @@ const columns = [
         title: 'Partners',
         links: [
             { to: '/signup?role=chef', label: 'Join as a chef' },
-            { to: '/signup?role=grocery_owner', label: 'Run a city grocery store' },
+            { to: '/signup?role=grocery_owner', label: 'Grocery partner access' },
             { to: '/about#chef-contract', label: 'Chef contract & perks' },
             { to: '/login', label: 'Partner login' }
         ]

@@ -19,6 +19,7 @@ const BookingDetailsPage = lazy(() => import('./pages/BookingDetailsPage'))
 const BookingRequest = lazy(() => import('./pages/BookingRequest'))
 const ChefDashboard = lazy(() => import('./pages/ChefDashboard'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const GroceryOwnerDashboard = lazy(() => import('./pages/GroceryOwnerDashboard'))
 import { useAuth } from './context/AuthContext'
 
 // Shown for the split second a page's code is loading
@@ -35,10 +36,6 @@ const Page = ({ children }) => (
     </motion.main>
 )
 
-const soon = [
-    ['/store', 'Store dashboard'],
-]
-
 const App = () => {
     const location = useLocation()
     const { user, isLoading } = useAuth()
@@ -53,9 +50,11 @@ const App = () => {
     }, [location.pathname, location.hash])
 
     if (!isLoading && user?.role === 'chef' && !location.pathname.startsWith('/chef')) return <Navigate to="/chef" replace />
+    if (!isLoading && user?.role === 'grocery_owner' && !location.pathname.startsWith('/store')) return <Navigate to="/store" replace />
 
     if (location.pathname === '/chef' || location.pathname.startsWith('/chef/')) return <Suspense fallback={<PageLoading />}><ChefDashboard /></Suspense>
     if (location.pathname === '/admin') return <Suspense fallback={<PageLoading />}><AdminDashboard /></Suspense>
+    if (location.pathname === '/store' || location.pathname.startsWith('/store/')) return <Suspense fallback={<PageLoading />}><GroceryOwnerDashboard /></Suspense>
 
     // Sign-up and login have their own quiet layout, without the main navbar and footer
     if (location.pathname === '/signup') return <div className="overflow-x-clip"><Suspense fallback={<PageLoading />}><Signup /></Suspense></div>
@@ -78,9 +77,6 @@ const App = () => {
                         <Route path="/contact" element={<Page><Contact /></Page>} />
                         <Route path="/grocery" element={<Page><Grocery /></Page>} />
                         <Route path="/grocery/:city" element={<Page><GroceryStore /></Page>} />
-                        {soon.map(([path, title]) => (
-                            <Route key={path} path={path} element={<Page><ComingSoon title={title} /></Page>} />
-                        ))}
                         <Route path="*" element={<Page><ComingSoon title="Page not found" /></Page>} />
                     </Routes>
                 </AnimatePresence>

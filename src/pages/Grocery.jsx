@@ -74,7 +74,7 @@ const ComingSoonCard = ({ cityList }) => (
             No store yet in {cityList.join(', ')}. Chefs there cook with groceries you already have at home.
         </p>
         <Link to="/signup?role=grocery_owner" className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-rust hover:underline">
-            Run the store in your city <Icon name="arrowRight" size={13} />
+            Grocery partner access <Icon name="arrowRight" size={13} />
         </Link>
     </article>
 )

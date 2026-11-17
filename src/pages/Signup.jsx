@@ -48,7 +48,7 @@ const roles = {
         next: ['Our team reviews your store', 'Once approved, add items and prices', 'Pack and deliver orders to chefs']
     }
 }
-const roleKeys = Object.keys(roles)
+const roleKeys = ['user', 'chef']
 
 // ---------------- Validation (same rules as the backend) ----------------
 const PHONE = /^(03\d{9}|\+923\d{9})$/
@@ -467,6 +467,7 @@ const HelpStrip = () => (
 
 const Signup = () => {
     const [params, setParams] = useSearchParams()
+    const ownerSignupAttempt = params.get('role') === 'grocery_owner'
     const role = roleKeys.includes(params.get('role')) ? params.get('role') : null
     // A link like /signup?role=chef opens the chef form directly
     const [step, setStep] = useState(role ? 2 : 1)
@@ -482,12 +483,14 @@ const Signup = () => {
 
     return (
         <AuthShell>
+            {ownerSignupAttempt ? <div className="mx-auto max-w-xl px-4 py-16 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sage-soft text-sage-dark"><Icon name="store" size={26}/></span><h1 className="mt-5 font-serif text-[30px] font-semibold">Grocery partner access</h1><p className="mt-3 text-[13px] leading-relaxed text-muted">Grocery owner accounts are created by a Chef Haazir administrator and assigned to one city. If you have an account, sign in to open your store dashboard.</p><Link to="/login" className="mt-6 inline-flex rounded-lg bg-sage-dark px-5 py-3 text-[12px] font-bold text-white">Go to login</Link></div> : <>
             <AnimatePresence mode="wait">
                 <motion.div key={step} initial={{ opacity: 0, x: step === 2 ? 24 : -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                     {step === 1 || !role ? <RoleStep initial={role} onContinue={go} /> : <FormStep key={role} role={role} onBack={() => setStep(1)} />}
                 </motion.div>
             </AnimatePresence>
             <HelpStrip />
+            </>}
         </AuthShell>
     )
 }
