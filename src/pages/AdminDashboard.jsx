@@ -160,7 +160,7 @@ const AdminDashboard = () => {
 
                 {tab === 'approvals' && <AdminApprovals chefs={filteredChefs} stores={filteredStores} chefsLoading={chefs.isLoading} storesLoading={stores.isLoading} chefsError={chefs.isError ? errorMessage(chefs.error) : ''} storesError={stores.isError ? errorMessage(stores.error) : ''} approvalKind={approvalKind} setApprovalKind={setApprovalKind} approvalSearch={approvalSearch} setApprovalSearch={setApprovalSearch} approvalCity={approvalCity} setApprovalCity={setApprovalCity} approvalStatus={approvalStatus} setApprovalStatus={setApprovalStatus} cities={cities} otpInputs={otpInputs} setOtpInputs={setOtpInputs} actionMutation={actionMutation} setConfirmDelete={setConfirmDelete} />}
 
-                {tab === 'bookings' && <AdminBookings bookings={bookings.data?.bookings || []} pagination={bookings.data?.pagination} status={bookingStatus} setStatus={setBookingStatus} loading={bookings.isLoading} error={bookings.isError ? errorMessage(bookings.error) : ''} />}
+                {tab === 'bookings' && <AdminBookings bookings={bookings.data?.bookings || []} pagination={bookings.data?.pagination} bookingStats={bookings.data?.bookingStats || {}} status={bookingStatus} setStatus={setBookingStatus} loading={bookings.isLoading} error={bookings.isError ? errorMessage(bookings.error) : ''} />}
 
                 {tab === 'payments' && <AdminPayments payments={payments.data?.chefs || []} totals={payments.data?.totals || {}} paymentsLoading={payments.isLoading} settlementsLoading={settlements.isLoading} paymentsError={payments.isError ? errorMessage(payments.error) : ''} settlementsError={settlements.isError ? errorMessage(settlements.error) : ''} actionMutation={actionMutation} />}
 
