@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { errorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -28,7 +28,10 @@ const Pill = ({ children, tone = 'sage' }) => <span className={`inline-flex roun
 const AdminDashboard = () => {
     const { user, isLoading: authLoading, logout } = useAuth()
     const queryClient = useQueryClient()
-    const [tab, setTab] = useState('overview')
+    const [searchParams, setSearchParams] = useSearchParams()
+    const validTabs = navItems.map(([key]) => key)
+    const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'overview'
+    const [tab, setTab] = useState(initialTab)
     const [bookingStatus, setBookingStatus] = useState('all')
     const [userSearch, setUserSearch] = useState('')
     const [approvalKind, setApprovalKind] = useState('chefs')
@@ -55,6 +58,11 @@ const AdminDashboard = () => {
     useEffect(() => {
         if (settings.data && !settingsDraft) setSettingsDraft({ commissionRate: settings.data.commissionRate, deliveryFee: settings.data.deliveryFee, freeDeliveryMin: settings.data.freeDeliveryMin, paymentBlockDays: settings.data.paymentBlockDays })
     }, [settings.data, settingsDraft])
+
+    useEffect(() => {
+        const urlTab = searchParams.get('tab')
+        if (validTabs.includes(urlTab) && urlTab !== tab) setTab(urlTab)
+    }, [searchParams, tab])
 
     const refreshAdmin = () => ['admin-stats', 'admin-chefs', 'admin-stores', 'admin-chef-payments', 'admin-settlements', 'admin-issues', 'admin-closed-issues', 'admin-users', 'admin-bookings', 'admin-settings'].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }))
     const actionMutation = useMutation({
@@ -118,6 +126,7 @@ const AdminDashboard = () => {
     }
     const changeTab = (key) => {
         setTab(key)
+        setSearchParams({ tab: key })
         setNotice('')
         window.scrollTo({ top: 0, behavior: 'smooth' })
         if (key === 'overview') stats.refetch()
