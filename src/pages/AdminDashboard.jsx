@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { errorMessage } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import Icon from '../components/Icon'
+import cities from '../constants/cities'
 
 const money = (value) => `Rs ${Number(value || 0).toLocaleString('en-PK')}`
 const timeLabel = (value) => value ? new Date(value).toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
@@ -26,6 +27,12 @@ const AdminDashboard = () => {
     const [tab, setTab] = useState('overview')
     const [bookingStatus, setBookingStatus] = useState('all')
     const [userSearch, setUserSearch] = useState('')
+    const [approvalKind, setApprovalKind] = useState('chefs')
+    const [approvalSearch, setApprovalSearch] = useState('')
+    const [approvalCity, setApprovalCity] = useState('all')
+    const [approvalStatus, setApprovalStatus] = useState('all')
+    const [otpInputs, setOtpInputs] = useState({})
+    const [confirmDelete, setConfirmDelete] = useState(null)
     const [issuedCode, setIssuedCode] = useState(null)
     const [notice, setNotice] = useState('')
     const [settingsDraft, setSettingsDraft] = useState(null)
@@ -48,7 +55,10 @@ const AdminDashboard = () => {
     const actionMutation = useMutation({
         mutationFn: async ({ action, id, value }) => {
             if (action === 'chef-approval') return (await api.patch(`/admin/chefs/${id}/approval`, { status: value })).data
+            if (action === 'verify-chef-otp') return (await api.post(`/admin/chefs/${id}/verify-otp`, { otp: value })).data
+            if (action === 'delete-chef') return (await api.delete(`/admin/chefs/${id}`)).data
             if (action === 'store-approval') return (await api.patch(`/admin/stores/${id}/approval`, { status: value })).data
+            if (action === 'delete-store') return (await api.delete(`/admin/stores/${id}`)).data
             if (action === 'verify-settlement') return (await api.patch(`/settlements/${id}/verify`)).data
             if (action === 'reject-settlement') return (await api.patch(`/settlements/${id}/reject`, { reason: 'Please verify the transfer reference and submit again.' })).data
             if (action === 'resolve-issue') return (await api.patch(`/issues/${id}/resolve`, { decision: value, adminNote: value === 'genuine' ? 'Issue confirmed after admin review.' : 'Issue dismissed after admin review.' })).data
@@ -58,6 +68,8 @@ const AdminDashboard = () => {
         },
         onSuccess: (data, variables) => {
             if (variables.action === 'otp') setIssuedCode(data)
+            if (variables.action === 'verify-chef-otp') setOtpInputs((current) => ({ ...current, [variables.id]: '' }))
+            if (variables.action === 'delete-chef' || variables.action === 'delete-store') setConfirmDelete(null)
             setNotice(data.message || (variables.action === 'otp' ? 'OTP generated. Send it to the chef.' : 'Admin update saved.'))
             if (variables.action === 'settings') setSettingsDraft({ commissionRate: data.settings.commissionRate, deliveryFee: data.settings.deliveryFee, freeDeliveryMin: data.settings.freeDeliveryMin, paymentBlockDays: data.settings.paymentBlockDays })
             refreshAdmin()
@@ -71,9 +83,20 @@ const AdminDashboard = () => {
 
     const data = stats.data || {}
     const waiting = data.waitingForAdmin || {}
-    const pendingChefs = (chefs.data || []).filter((chef) => chef.approvalStatus === 'pending')
+    const allChefs = chefs.data || []
+    const pendingChefs = allChefs.filter((chef) => chef.approvalStatus === 'pending')
     const otpRequests = (chefs.data || []).filter((chef) => chef.otpRequestedAt && !chef.phoneVerified)
-    const pendingStores = (stores.data || []).filter((store) => store.approvalStatus === 'pending')
+    const allStores = stores.data || []
+    const pendingStores = allStores.filter((store) => store.approvalStatus === 'pending')
+    const searchable = approvalSearch.trim().toLowerCase()
+    const filteredChefs = allChefs.filter((chef) => {
+        const text = [chef.user?.name, chef.user?.phone, chef.user?.email, chef.city, chef._id].join(' ').toLowerCase()
+        return (!searchable || text.includes(searchable)) && (approvalCity === 'all' || chef.city === approvalCity) && (approvalStatus === 'all' || chef.approvalStatus === approvalStatus)
+    })
+    const filteredStores = allStores.filter((store) => {
+        const text = [store.name, store.owner?.name, store.owner?.phone, store.city, store._id].join(' ').toLowerCase()
+        return (!searchable || text.includes(searchable)) && (approvalCity === 'all' || store.city === approvalCity) && (approvalStatus === 'all' || store.approvalStatus === approvalStatus)
+    })
     const monthly = data.revenueByMonth || []
     const maxRevenue = Math.max(1, ...monthly.map((month) => (month.commission || 0) + (month.grocerySales || 0)))
     const completedCount = data.bookingsByStatus?.completed || 0
