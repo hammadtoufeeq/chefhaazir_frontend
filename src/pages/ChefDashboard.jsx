@@ -229,7 +229,7 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
     const listQuery = useQuery({
         queryKey: ['chef-bookings', status],
         queryFn: async () => (await api.get('/bookings/chef', { params: { status, page: 1, limit: 50 } })).data,
-        refetchInterval: mode === 'requests' && status === 'pending' ? 5_000 : 10_000,
+        refetchInterval: mode === 'requests' && status === 'pending' ? 15_000 : 30_000,
         refetchOnWindowFocus: true
     })
     const actionMutation = useMutation({
@@ -291,8 +291,8 @@ const RequestWorkspace = ({ pendingCount }) => {
     const [notice, setNotice] = useState('')
     const [confirmAction, setConfirmAction] = useState(null)
     const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
-    const requests = useQuery({ queryKey: ['chef-bookings', tab], queryFn: async () => (await api.get('/bookings/chef', { params: { status: tab, page: 1, limit: 50 } })).data, refetchInterval: tab === 'pending' ? 5_000 : 10_000, refetchOnWindowFocus: true })
-    const active = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 50 } })).data, refetchInterval: 10_000, refetchOnWindowFocus: true })
+    const requests = useQuery({ queryKey: ['chef-bookings', tab], queryFn: async () => (await api.get('/bookings/chef', { params: { status: tab, page: 1, limit: 50 } })).data, refetchInterval: tab === 'pending' ? 15_000 : 30_000, refetchOnWindowFocus: true })
+    const active = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 50 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
     const mutation = useMutation({
         mutationFn: async ({ booking, action }) => {
             const paths = { accept: 'accept', reject: 'reject', complete: 'complete', 'grocery-return': 'grocery-return', cancel: 'cancel' }
@@ -333,7 +333,7 @@ const Earnings = () => {
     const [notice, setNotice] = useState('')
     const queryClient = useQueryClient()
     const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data })
-    const settlements = useQuery({ queryKey: ['chef-settlements'], queryFn: async () => (await api.get('/settlements/mine')).data.settlements })
+    const settlements = useQuery({ queryKey: ['chef-settlements'], queryFn: async () => (await api.get('/settlements/mine')).data.settlements ?? [] })
     const payout = earnings.data
     const settlementMutation = useMutation({
         mutationFn: async () => (await api.post('/settlements', { method: 'sadapay', transactionId: transactionId.trim() })).data,
@@ -418,7 +418,7 @@ const KitchenTimings = ({ profile }) => {
     const today = todayInPakistan()
     const [date, setDate] = useState(today)
     const dates = useMemo(() => Array.from({ length: 8 }, (_, index) => addDays(today, index)), [today])
-    const availability = useQuery({ queryKey: ['chef-timing-availability', profile.id, date], queryFn: async () => (await api.get(`/chefs/${profile.id}/availability`, { params: { date } })).data.slots, enabled: !!profile.id })
+    const availability = useQuery({ queryKey: ['chef-timing-availability', profile.id, date], queryFn: async () => (await api.get(`/chefs/${profile.id}/availability`, { params: { date } })).data.slots ?? [], enabled: !!profile.id })
     const queryClient = useQueryClient()
     const [notice, setNotice] = useState('')
     const saveAvailability = useMutation({
@@ -451,7 +451,7 @@ const KitchenTimings = ({ profile }) => {
 }
 
 const LiveChefOverview = ({ profile, pendingCount }) => {
-    const confirmed = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 5 } })).data, refetchInterval: 10_000, refetchOnWindowFocus: true })
+    const confirmed = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 5 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
     const completed = useQuery({ queryKey: ['chef-bookings', 'completed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'completed', page: 1, limit: 1 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
     const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
     const grocery = useQuery({ queryKey: ['grocery', 'chef-overview', profile.city], queryFn: async () => (await api.get('/grocery/items', { params: { city: profile.city, page: 1, limit: 4 } })).data, enabled: !!profile.city })
@@ -472,7 +472,7 @@ const LiveChefOverview = ({ profile, pendingCount }) => {
 }
 
 const ChefAnalyticsOverview = ({ pendingCount }) => {
-    const dashboard = useQuery({ queryKey: ['chef-dashboard-analytics'], queryFn: fetchChefDashboard, staleTime: 30_000, refetchInterval: 15_000, refetchOnWindowFocus: true })
+    const dashboard = useQuery({ queryKey: ['chef-dashboard-analytics'], queryFn: fetchChefDashboard, staleTime: 30_000, refetchInterval: 30_000, refetchOnWindowFocus: true })
     const analytics = dashboard.data?.analytics
     const counts = analytics?.statusCounts || {}
     const earnings = dashboard.data?.earnings
@@ -530,8 +530,8 @@ const ChefDashboard = () => {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
     const { user, isLoading: authLoading, logout } = useAuth()
-    const profileQuery = useQuery({ queryKey: ['chef-profile'], queryFn: async () => (await api.get('/chefs/me/profile')).data.profile, enabled: user?.role === 'chef', retry: false, refetchInterval: 30_000 })
-    const pendingQuery = useQuery({ queryKey: ['chef-dashboard-analytics'], queryFn: fetchChefDashboard, enabled: user?.role === 'chef', staleTime: 30_000, refetchInterval: 15_000, refetchOnWindowFocus: true, select: (data) => data.analytics?.statusCounts?.pending || 0 })
+    const profileQuery = useQuery({ queryKey: ['chef-profile'], queryFn: async () => (await api.get('/chefs/me/profile')).data.profile ?? null, enabled: user?.role === 'chef', retry: false, refetchInterval: 30_000 })
+    const pendingQuery = useQuery({ queryKey: ['chef-dashboard-analytics'], queryFn: fetchChefDashboard, enabled: user?.role === 'chef', staleTime: 30_000, refetchInterval: 30_000, refetchOnWindowFocus: true, select: (data) => data.analytics?.statusCounts?.pending || 0 })
     const profile = profileQuery.data
     const pathname = location.pathname
     const current = pathname === '/chef' ? 'overview' : pathname.split('/')[2] || 'overview'

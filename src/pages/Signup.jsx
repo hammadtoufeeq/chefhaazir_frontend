@@ -221,7 +221,7 @@ const FormStep = ({ role, onBack }) => {
     // Grocery owners: warn when the city already has an approved store
     const { data: stores = [] } = useQuery({
         queryKey: ['grocery', 'stores'],
-        queryFn: async () => (await api.get('/grocery/stores')).data.stores,
+        queryFn: async () => (await api.get('/grocery/stores')).data.stores ?? [],
         enabled: role === 'grocery_owner'
     })
     const cityTaken = role === 'grocery_owner' && stores.find((s) => s.city === form.city)

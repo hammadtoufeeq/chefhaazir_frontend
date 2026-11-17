@@ -37,9 +37,9 @@ const BookingDetailsPage = () => {
     const { user, isLoading: authLoading } = useAuth()
     const query = useQuery({
         queryKey: ['booking-detail', bookingId],
-        queryFn: async () => (await api.get(`/bookings/${bookingId}`)).data.booking,
+        queryFn: async () => (await api.get(`/bookings/${bookingId}`)).data.booking ?? null,
         enabled: user?.role === 'user' && !!bookingId,
-        refetchInterval: 5_000,
+        refetchInterval: 15_000,
         refetchOnWindowFocus: true
     })
 

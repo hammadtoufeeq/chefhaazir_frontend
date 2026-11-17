@@ -46,7 +46,7 @@ const AdminDashboard = () => {
     const issues = useQuery({ queryKey: ['admin-issues'], queryFn: async () => (await api.get('/issues', { params: { status: 'open', limit: 50 } })).data.issues || [], enabled: user?.role === 'admin', refetchInterval: 20_000 })
     const users = useQuery({ queryKey: ['admin-users', userSearch], queryFn: async () => (await api.get('/admin/users', { params: { search: userSearch || undefined, page: 1, limit: 50 } })).data, enabled: user?.role === 'admin', refetchInterval: 30_000 })
     const bookings = useQuery({ queryKey: ['admin-bookings', bookingStatus], queryFn: async () => (await api.get('/admin/bookings', { params: { status: bookingStatus === 'all' ? undefined : bookingStatus, page: 1, limit: 50 } })).data, enabled: user?.role === 'admin' && tab === 'bookings', refetchInterval: 20_000 })
-    const settings = useQuery({ queryKey: ['admin-settings'], queryFn: async () => (await api.get('/admin/settings')).data.settings, enabled: user?.role === 'admin' })
+    const settings = useQuery({ queryKey: ['admin-settings'], queryFn: async () => (await api.get('/admin/settings')).data.settings ?? null, enabled: user?.role === 'admin' })
 
     useEffect(() => {
         if (settings.data && !settingsDraft) setSettingsDraft({ commissionRate: settings.data.commissionRate, deliveryFee: settings.data.deliveryFee, freeDeliveryMin: settings.data.freeDeliveryMin, paymentBlockDays: settings.data.paymentBlockDays })

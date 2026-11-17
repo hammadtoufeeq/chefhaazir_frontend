@@ -54,13 +54,13 @@ const BookingCard = ({ chef }) => {
 
     const { data: slots, isLoading, isError, refetch } = useQuery({
         queryKey: ['availability', chef.id, date],
-        queryFn: async () => (await api.get(`/chefs/${chef.id}/availability`, { params: { date } })).data.slots,
+        queryFn: async () => (await api.get(`/chefs/${chef.id}/availability`, { params: { date } })).data.slots ?? [],
         refetchInterval: 60 * 1000
     })
 
     const pendingRequests = useQuery({
         queryKey: ['customer-pending-bookings', user?.id],
-        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', page: 1, limit: 50 } })).data.bookings,
+        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', page: 1, limit: 50 } })).data.bookings ?? [],
         enabled: user?.role === 'user',
         refetchInterval: 30 * 1000
     })
@@ -207,7 +207,7 @@ const ChefProfile = () => {
     const { id } = useParams()
     const { data: chef, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['chef', id],
-        queryFn: async () => (await api.get(`/chefs/${id}`)).data.chef,
+        queryFn: async () => (await api.get(`/chefs/${id}`)).data.chef ?? null,
         retry: (count, err) => ![400, 404].includes(err?.response?.status) && count < 2
     })
 

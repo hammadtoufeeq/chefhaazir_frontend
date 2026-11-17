@@ -182,7 +182,7 @@ const GroceryStore = () => {
     // Total item count for the "All (n)" tab, whatever filter is active
     const { data: allCount } = useQuery({
         queryKey: ['grocery', 'count', city],
-        queryFn: async () => (await api.get('/grocery/items', { params: { city, limit: 1 } })).data.pagination.total,
+        queryFn: async () => (await api.get('/grocery/items', { params: { city, limit: 1 } })).data.pagination?.total ?? 0,
         enabled: !!city
     })
 

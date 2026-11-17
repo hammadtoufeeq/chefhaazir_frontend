@@ -38,7 +38,7 @@ const BookingRequest = () => {
 
     const chefQuery = useQuery({
         queryKey: ['chef', chefId],
-        queryFn: async () => (await api.get(`/chefs/${chefId}`)).data.chef,
+        queryFn: async () => (await api.get(`/chefs/${chefId}`)).data.chef ?? null,
         enabled: !!chefId,
         retry: (count, error) => ![400, 404].includes(error?.response?.status) && count < 2
     })
@@ -46,14 +46,14 @@ const BookingRequest = () => {
 
     const availability = useQuery({
         queryKey: ['availability', chefId, date],
-        queryFn: async () => (await api.get(`/chefs/${chefId}/availability`, { params: { date } })).data.slots,
+        queryFn: async () => (await api.get(`/chefs/${chefId}/availability`, { params: { date } })).data.slots ?? [],
         enabled: !!chefId && !!date,
         refetchInterval: 60_000
     })
 
     const pendingRequests = useQuery({
         queryKey: ['customer-pending-bookings', user?.id],
-        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', page: 1, limit: 50 } })).data.bookings,
+        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', page: 1, limit: 50 } })).data.bookings ?? [],
         enabled: user?.role === 'user',
         refetchInterval: 30_000
     })

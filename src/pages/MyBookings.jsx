@@ -119,9 +119,9 @@ const BookingCard = ({ booking, onCancel, onDetails, cancelling }) => {
 const BookingDetails = ({ id, onClose }) => {
     const { data, isLoading, isError } = useQuery({
         queryKey: ['booking-detail', id],
-        queryFn: async () => (await api.get(`/bookings/${id}`)).data.booking,
+        queryFn: async () => (await api.get(`/bookings/${id}`)).data.booking ?? null,
         enabled: !!id,
-        refetchInterval: 5_000,
+        refetchInterval: 15_000,
         refetchOnWindowFocus: true
     })
     const chef = data?.chef
@@ -169,21 +169,21 @@ const MyBookings = () => {
         queryFn: () => loadBookings({ filter, page }),
         enabled: user?.role === 'user',
         placeholderData: (previous) => previous,
-        refetchInterval: 5_000,
+        refetchInterval: 15_000,
         refetchOnWindowFocus: true
     })
     const pendingCount = useQuery({
         queryKey: ['my-bookings-count', 'pending'],
-        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', limit: 1 } })).data.pagination.total,
+        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'pending', limit: 1 } })).data.pagination?.total ?? 0,
         enabled: user?.role === 'user',
-        refetchInterval: 10_000,
+        refetchInterval: 30_000,
         refetchOnWindowFocus: true
     })
     const confirmedCount = useQuery({
         queryKey: ['my-bookings-count', 'confirmed'],
-        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'confirmed', limit: 1 } })).data.pagination.total,
+        queryFn: async () => (await api.get('/bookings/mine', { params: { status: 'confirmed', limit: 1 } })).data.pagination?.total ?? 0,
         enabled: user?.role === 'user',
-        refetchInterval: 10_000,
+        refetchInterval: 30_000,
         refetchOnWindowFocus: true
     })
     const cancelMutation = useMutation({
