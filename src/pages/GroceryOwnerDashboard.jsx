@@ -12,8 +12,11 @@ import toast from '../lib/toast'
 // ---------------------------------------------------------------------------
 // Order journey for a grocery store:
 //   ordered (new) -> packed (cart ready) -> out_for_delivery (shipped) -> delivered_to_chef (completed)
+<<<<<<< HEAD
 // An open order whose delivery time passed (or whose booking already completed) without
 // being marked delivered moves to "Missed". The store can still update it from there.
+=======
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
 // A cancelled booking turns undelivered groceries into 'cancelled'; delivered ones
 // come back as 'return_requested' and the store verifies the return.
 // ---------------------------------------------------------------------------
@@ -21,11 +24,16 @@ const STAGES = [
     { key: 'ordered', label: 'New orders', short: 'New', icon: 'bell', hint: 'Add every item to the cart, then mark the order packed.' },
     { key: 'packed', label: 'Ready to ship', short: 'Packed', icon: 'basket', hint: 'Packed and waiting. Send them out to the chef.' },
     { key: 'out_for_delivery', label: 'On the way', short: 'Shipped', icon: 'truck', hint: 'With your rider. Mark delivered once the chef has them.' },
+<<<<<<< HEAD
     { key: 'delivered_to_chef', label: 'Delivered', short: 'Delivered', icon: 'checkCircle', hint: 'Completed deliveries. The chef has the groceries.' },
     { key: 'missed', label: 'Missed', short: 'Missed', icon: 'clock', hint: 'These orders passed their delivery time without being marked delivered. If you already delivered one, mark it delivered now. Otherwise contact the chef.' }
 ]
 const OPEN_STATUSES = ['ordered', 'packed', 'out_for_delivery']
 const DELIVERED = { status: 'delivered_to_chef', label: 'Mark delivered', icon: 'checkCircle' }
+=======
+    { key: 'delivered_to_chef', label: 'Delivered', short: 'Delivered', icon: 'checkCircle', hint: 'Completed deliveries. The chef has the groceries.' }
+]
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
 const statusInfo = {
     ordered: ['New order', 'border-amber-200 bg-amber-50 text-amber-800'],
     packed: ['Packed', 'border-sky-200 bg-sky-50 text-sky-800'],
@@ -138,6 +146,7 @@ const Timeline = ({ order }) => {
 const OrderCard = ({ order, onAdvance, onVerifyReturn, busyId }) => {
     const items = order.groceryItems || []
     const [cart, setCart] = useState(() => readCart(order._id))
+<<<<<<< HEAD
     const isOpen = OPEN_STATUSES.includes(order.groceryStatus)
     // Booking is still relevant to the store (not cancelled, rejected or expired)
     const bookingLive = ['confirmed', 'completed', 'disputed'].includes(order.status)
@@ -147,12 +156,22 @@ const OrderCard = ({ order, onAdvance, onVerifyReturn, busyId }) => {
     const isNew = order.groceryStatus === 'ordered' && !missed
     const allInCart = items.length > 0 && items.every((_, i) => cart.includes(i))
     const next = NEXT[order.groceryStatus]
+=======
+    const isNew = order.groceryStatus === 'ordered'
+    const allInCart = items.length > 0 && items.every((_, i) => cart.includes(i))
+    const next = NEXT[order.groceryStatus]
+    const bookingLive = order.status === 'confirmed'
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
     const busy = busyId === order._id
     const chef = order.chef || {}
     const links = phoneLinks(chef.phone)
     const address = order.chefProfile?.address
     const deliverBy = order.slotStart
+<<<<<<< HEAD
     const late = missed || ((isNew || order.groceryStatus === 'packed') && deliverBy ? new Date(deliverBy).getTime() < Date.now() + 60 * 60000 : false)
+=======
+    const late = isNew || order.groceryStatus === 'packed' ? deliverBy && new Date(deliverBy).getTime() < Date.now() + 60 * 60000 : false
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
 
     const toggle = (i) => {
         if (!isNew) return
@@ -173,19 +192,29 @@ const OrderCard = ({ order, onAdvance, onVerifyReturn, busyId }) => {
                     </div>
                     <p className="mt-0.5 text-[11px] text-muted">{items.length} {items.length === 1 ? 'item' : 'items'} · for {dateLabel(order.date)}, {slotLabel(order.slot)}</p>
                 </div>
+<<<<<<< HEAD
                 {isOpen && bookingLive && (
                     <div className={`rounded-lg px-3 py-1.5 text-right ${late ? 'bg-rust-soft text-rust-dark' : 'bg-white text-ink ring-1 ring-line'}`}>
                         <p className="text-[9px] font-bold uppercase tracking-wide opacity-75">{missed ? 'Was due at' : 'Deliver before'}</p>
+=======
+                {['ordered', 'packed', 'out_for_delivery'].includes(order.groceryStatus) && bookingLive && (
+                    <div className={`rounded-lg px-3 py-1.5 text-right ${late ? 'bg-rust-soft text-rust-dark' : 'bg-white text-ink ring-1 ring-line'}`}>
+                        <p className="text-[9px] font-bold uppercase tracking-wide opacity-75">Deliver before</p>
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
                         <p className="text-[12px] font-bold">{startTime(order.slot)} · {relative(deliverBy)}</p>
                     </div>
                 )}
             </div>
 
+<<<<<<< HEAD
             {missed && (
                 <p className="flex items-start gap-2 bg-amber-50 px-5 py-2.5 text-[11px] font-semibold text-amber-900"><Icon name="clock" size={14} className="mt-0.5 shrink-0" /> <span>{order.status === 'confirmed' ? 'The delivery time has passed.' : `This booking is already ${order.status}.`} This order was never marked delivered. If you already delivered it, mark it delivered. If a step is still pending, update it below.</span></p>
             )}
 
             {!bookingLive && isOpen && (
+=======
+            {!bookingLive && ['ordered', 'packed', 'out_for_delivery'].includes(order.groceryStatus) && (
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
                 <p className="flex items-center gap-2 bg-rust-soft px-5 py-2.5 text-[11px] font-semibold text-rust-dark"><Icon name="xCircle" size={14} /> This booking is {order.status}. Do not send these groceries.</p>
             )}
 
@@ -254,6 +283,7 @@ const OrderCard = ({ order, onAdvance, onVerifyReturn, busyId }) => {
                 <div className="flex flex-col gap-2 border-t border-line bg-stone-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                     <p className="text-[11px] text-muted">
                         {order.groceryStatus === 'return_requested' ? 'The chef is sending these groceries back. Verify once you receive them.'
+<<<<<<< HEAD
                             : missed ? 'Update this order to match what really happened. Skipped steps are filled in automatically.'
                                 : isNew ? (allInCart ? 'Everything is in the cart. Mark the order packed.' : 'Tick each item as you put it in the cart.')
                                     : order.groceryStatus === 'packed' ? 'Hand the order to your rider, then mark it shipped.' : 'Mark delivered once the chef has received the groceries.'}
@@ -267,6 +297,15 @@ const OrderCard = ({ order, onAdvance, onVerifyReturn, busyId }) => {
                                 {next.status !== 'delivered_to_chef' && <button type="button" disabled={busy} onClick={() => onAdvance(order, next)} className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[11px] font-bold hover:border-sage/50 disabled:opacity-50"><Icon name={next.icon} size={14} /> {next.label}</button>}
                                 <button type="button" disabled={busy} onClick={() => onAdvance(order, DELIVERED)} className="flex items-center gap-1.5 rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white hover:bg-sage disabled:cursor-not-allowed disabled:opacity-45"><Icon name={DELIVERED.icon} size={14} /> {busy ? 'Saving…' : DELIVERED.label}</button>
                             </>
+=======
+                            : isNew ? (allInCart ? 'Everything is in the cart. Mark the order packed.' : 'Tick each item as you put it in the cart.')
+                                : order.groceryStatus === 'packed' ? 'Hand the order to your rider, then mark it shipped.' : 'Mark delivered once the chef has received the groceries.'}
+                    </p>
+                    <div className="flex shrink-0 gap-2">
+                        {isNew && !allInCart && items.length > 0 && <button type="button" onClick={addAll} className="rounded-lg border border-line bg-white px-3.5 py-2.5 text-[11px] font-bold hover:border-sage/50">Add all to cart</button>}
+                        {order.groceryStatus === 'return_requested' ? (
+                            <button type="button" disabled={busy} onClick={() => onVerifyReturn(order)} className="flex items-center gap-1.5 rounded-lg bg-rust px-4 py-2.5 text-[11px] font-bold text-white hover:bg-rust-dark disabled:opacity-50"><Icon name="undo" size={14} /> {busy ? 'Saving…' : 'Verify return received'}</button>
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
                         ) : (
                             <button type="button" disabled={busy || !bookingLive || (isNew && !allInCart)} onClick={() => onAdvance(order, next)} className="flex items-center gap-1.5 rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white hover:bg-sage disabled:cursor-not-allowed disabled:opacity-45"><Icon name={next.icon} size={14} /> {busy ? 'Saving…' : next.label}</button>
                         )}
@@ -278,6 +317,7 @@ const OrderCard = ({ order, onAdvance, onVerifyReturn, busyId }) => {
 }
 
 // ---------------- Orders, Returns, Overview, Inventory ----------------
+<<<<<<< HEAD
 // stage: a grocery status, 'missed', 'upcoming' (all open orders still on time), or null (everything)
 const useOrders = (status, enabled = true) => useQuery({
     queryKey: ['store-orders', status || 'all'],
@@ -285,6 +325,11 @@ const useOrders = (status, enabled = true) => useQuery({
         const params = status === 'missed' || status === 'upcoming' ? { view: status } : { status: status || undefined }
         return (await api.get('/grocery/orders', { params: { ...params, page: 1, limit: 50 } })).data.orders ?? []
     },
+=======
+const useOrders = (status, enabled = true) => useQuery({
+    queryKey: ['store-orders', status || 'all'],
+    queryFn: async () => (await api.get('/grocery/orders', { params: { status: status || undefined, page: 1, limit: 50 } })).data.orders ?? [],
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
     enabled,
     refetchInterval: status === 'ordered' ? 20_000 : 30_000,
     refetchOnWindowFocus: true
@@ -302,7 +347,11 @@ const useOrderActions = () => {
         mutationFn: async ({ order, next }) => (await api.patch(`/grocery/orders/${order._id}/status`, { status: next.status })).data,
         onMutate: ({ order }) => setBusyId(order._id),
         onSuccess: (data, { order, next }) => {
+<<<<<<< HEAD
             if (next.status === 'packed' || next.status === 'delivered_to_chef') writeCart(order._id, [])
+=======
+            if (next.status === 'packed') writeCart(order._id, [])
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
             done(data.message || 'Order updated')
         },
         onError: (error) => toast.error(errorMessage(error)),
@@ -333,6 +382,7 @@ const Orders = ({ counts }) => {
 
     return (
         <div className="space-y-6">
+<<<<<<< HEAD
             <Heading eyebrow="Order desk" title="Grocery orders" text="Orders arrive when a chef accepts a booking with groceries. Pack them, ship them to the chef, and mark them delivered. Anything you forget moves to Missed, where you can still update it." />
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {STAGES.map((s, i) => {
@@ -345,6 +395,19 @@ const Orders = ({ counts }) => {
                             <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-white/15' : 'bg-stone-100 text-ink/70'}`}><Icon name={s.icon} size={17} /></span>
                             <span className="min-w-0">
                                 <span className={`block text-[9px] font-bold uppercase tracking-wide ${active ? 'text-white/70' : 'text-muted'}`}>{s.key === 'missed' ? 'Needs attention' : `Step ${i + 1}`}</span>
+=======
+            <Heading eyebrow="Order desk" title="Grocery orders" text="Orders arrive when a chef accepts a booking with groceries. Pack them, ship them to the chef, and mark them delivered." />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {STAGES.map((s, i) => {
+                    const active = s.key === stage
+                    const count = counts[s.key]
+                    return (
+                        <button key={s.key} type="button" onClick={() => setStage(s.key)} aria-pressed={active}
+                            className={`relative flex items-center gap-3 rounded-xl border p-3 text-left transition ${active ? 'border-sage-dark bg-sage-dark text-white shadow-sm' : 'border-line bg-white hover:border-sage/40'}`}>
+                            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-white/15' : 'bg-stone-100 text-ink/70'}`}><Icon name={s.icon} size={17} /></span>
+                            <span className="min-w-0">
+                                <span className={`block text-[9px] font-bold uppercase tracking-wide ${active ? 'text-white/70' : 'text-muted'}`}>Step {i + 1}</span>
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
                                 <span className="block truncate text-[12.5px] font-bold">{s.label}</span>
                             </span>
                             {count > 0 && s.key !== 'delivered_to_chef' && <span className={`absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${active ? 'bg-white text-sage-dark' : 'bg-rust text-white'}`}>{count}</span>}
@@ -353,7 +416,11 @@ const Orders = ({ counts }) => {
                 })}
             </div>
             <p className="flex items-center gap-2 text-[12px] text-muted"><Icon name={current.icon} size={14} className="text-rust" /> {current.hint}</p>
+<<<<<<< HEAD
             <OrderList query={query} actions={actions} empty={<Empty icon={current.icon} title={stage === 'ordered' ? 'No new orders' : `Nothing ${current.label.toLowerCase()}`} text={stage === 'ordered' ? 'New grocery orders appear here as soon as a chef accepts a booking with groceries. This page refreshes on its own.' : stage === 'missed' ? 'Orders that pass their delivery time without being marked delivered show up here, so nothing gets forgotten.' : 'Orders move here as you work through them.'} />} />
+=======
+            <OrderList query={query} actions={actions} empty={<Empty icon={current.icon} title={stage === 'ordered' ? 'No new orders' : `Nothing ${current.label.toLowerCase()}`} text={stage === 'ordered' ? 'New grocery orders appear here as soon as a chef accepts a booking with groceries. This page refreshes on its own.' : 'Orders move here as you work through them.'} />} />
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
         </div>
     )
 }
@@ -376,13 +443,21 @@ const Returns = () => {
 }
 
 const Overview = ({ store, stats, counts, navigate }) => {
+<<<<<<< HEAD
     const open = useOrders('upcoming')
     const queue = (open.data || []).slice(0, 4)
+=======
+    const open = useOrders(null)
+    const queue = (open.data || []).filter((o) => o.status === 'confirmed' && ['ordered', 'packed', 'out_for_delivery'].includes(o.groceryStatus)).slice(0, 4)
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
     const kpis = [
         { label: 'New orders to pack', value: counts.ordered, icon: 'bell', tone: 'text-rust', to: '/store/orders' },
         { label: 'Ready to ship', value: counts.packed, icon: 'basket', tone: 'text-sky-700', to: '/store/orders' },
         { label: 'On the way', value: counts.out_for_delivery, icon: 'truck', tone: 'text-violet-700', to: '/store/orders' },
+<<<<<<< HEAD
         { label: 'Missed orders', value: counts.missed, icon: 'clock', tone: 'text-rust', to: '/store/orders' },
+=======
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
         { label: 'Returns to verify', value: counts.return_requested, icon: 'undo', tone: 'text-rust', to: '/store/returns' }
     ]
     const top = stats.data?.topItems || []
@@ -392,7 +467,11 @@ const Overview = ({ store, stats, counts, navigate }) => {
             <Heading eyebrow={`${store.city} grocery store`} title={`Salaam, ${store.ownerName?.split(' ')[0] || 'partner'}`} text={`${store.name} · ${store.address || ''}`}
                 action={<button type="button" onClick={() => navigate('/store/orders')} className="flex items-center gap-2 rounded-lg bg-rust px-4 py-2.5 text-[12px] font-bold text-white hover:bg-rust-dark"><Icon name="basket" size={15} /> Open order desk</button>} />
 
+<<<<<<< HEAD
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+=======
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
                 {kpis.map((k) => (
                     <Link key={k.label} to={k.to} className="group rounded-xl border border-line bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift">
                         <div className="flex items-start justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">{k.label}</p><Icon name={k.icon} size={18} className={k.tone} /></div>
@@ -542,6 +621,85 @@ const Inventory = ({ store }) => {
             )}
         </div>
     )
+<<<<<<< HEAD
+=======
+}
+
+// ---------------- Page shell ----------------
+const GroceryOwnerDashboard = () => {
+    const { user, isLoading: authLoading, logout } = useAuth()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const isOwner = user?.role === 'grocery_owner'
+
+    const storeQuery = useQuery({ queryKey: ['store-me'], queryFn: async () => (await api.get('/grocery/my-store')).data.store ?? null, enabled: isOwner, retry: false })
+    const stats = useQuery({ queryKey: ['store-stats'], queryFn: async () => (await api.get('/grocery/stats')).data, enabled: isOwner, refetchInterval: 20_000, refetchOnWindowFocus: true })
+
+    if (authLoading) return <div className="flex min-h-screen items-center justify-center bg-[#fbfaf8]"><span className="h-8 w-8 animate-spin rounded-full border-[3px] border-sage border-t-transparent" /></div>
+    if (!user) return <Navigate to="/login?next=%2Fstore" replace />
+    if (!isOwner) return <Navigate to={user.role === 'admin' ? '/admin' : user.role === 'chef' ? '/chef' : '/'} replace />
+
+    const counts = stats.data?.needsAction || {}
+    const navCounts = { orders: (counts.ordered || 0) + (counts.packed || 0) + (counts.out_for_delivery || 0), returns: counts.return_requested || 0 }
+    const section = location.pathname.split('/')[2] || 'overview'
+    const store = storeQuery.data ? { ...storeQuery.data, ownerName: user.name } : null
+    const active = store?.approvalStatus === 'approved'
+    const signOut = () => { logout(); navigate('/') }
+
+    const page = !store ? null
+        : !active ? <Empty icon="shield" title="Store not active yet" text="Your store is waiting for Chef Haazir to activate it. Orders and inventory open as soon as it is active." />
+            : section === 'orders' ? <Orders counts={counts} />
+                : section === 'returns' ? <Returns />
+                    : section === 'inventory' ? <Inventory store={store} />
+                        : <Overview store={store} stats={stats} counts={counts} navigate={navigate} />
+
+    return (
+        <div className="min-h-screen bg-[#fbfaf8] text-ink">
+            <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur-md">
+                <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between gap-3 px-4 lg:px-7">
+                    <Link to="/store" className="flex flex-col leading-none"><span className="font-serif text-[22px] font-semibold tracking-tight text-rust">Chef Haazir</span><span className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted">Grocery partner portal</span></Link>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <span className={`hidden rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide sm:inline-flex ${active ? 'bg-sage-soft text-sage-dark' : 'bg-orange-100 text-rust'}`}>{active ? `${store.city} store · live` : 'Store not active'}</span>
+                        <Link to="/store/orders" aria-label={`${counts.ordered || 0} new orders`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-stone-100"><Icon name="bell" size={17} />{counts.ordered > 0 && <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-white">{counts.ordered}</span>}</Link>
+                        <div className="hidden text-right sm:block"><p className="max-w-32 truncate text-[11px] font-bold">{user.name}</p><p className="text-[9px] text-muted">Store owner</p></div>
+                        <button type="button" onClick={signOut} aria-label="Log out" className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15} /></button>
+                    </div>
+                </div>
+                <nav aria-label="Store sections" className="flex gap-1 overflow-x-auto border-t border-line px-3 py-2 lg:hidden">
+                    {NAV.map((item) => (
+                        <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ${isActive ? 'bg-sage-dark text-white' : 'text-muted hover:bg-stone-100'}`}>
+                            {item.label}{navCounts[item.countKey] > 0 && <span className="rounded-full bg-rust px-1.5 text-[9px] font-bold text-white">{navCounts[item.countKey]}</span>}
+                        </NavLink>
+                    ))}
+                </nav>
+            </header>
+
+            <div className="mx-auto grid min-h-[calc(100vh-68px)] max-w-[1600px] lg:grid-cols-[220px_minmax(0,1fr)]">
+                <aside className="hidden border-r border-line bg-[#f6f4f0] px-3 py-6 lg:flex lg:flex-col">
+                    <p className="flex items-center gap-2 px-3 text-[11px] font-semibold text-ink/75"><Icon name="pin" size={13} className="text-rust" />{store?.city || 'Your city'} store</p>
+                    <p className="mb-2 mt-8 px-3 text-[9px] font-bold uppercase tracking-[0.14em] text-muted">Workspace</p>
+                    <nav className="space-y-1">{NAV.map((item) => <PortalNavLink key={item.to} {...item} count={navCounts[item.countKey]} />)}</nav>
+                    <div className="mt-auto space-y-4">
+                        <div className="rounded-lg bg-white px-3 py-3 text-[10.5px]">
+                            <p className="flex items-center gap-2 font-bold text-muted"><Icon name="truck" size={13} className="text-sage" /> How it works</p>
+                            <ol className="mt-2 space-y-1 text-ink/75"><li>1. Add items to cart</li><li>2. Mark packed</li><li>3. Ship to chef</li><li>4. Mark delivered</li></ol>
+                        </div>
+                        <button type="button" onClick={signOut} className="flex items-center gap-2 px-3 text-[11px] font-semibold text-muted hover:text-rust"><Icon name="logout" size={15} /> Log out</button>
+                    </div>
+                </aside>
+
+                <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
+                    <div className="mx-auto max-w-6xl">
+                        {storeQuery.isLoading ? <div className="space-y-4"><div className="h-10 w-72 animate-pulse rounded bg-stone-100" /><div className="h-[480px] animate-pulse rounded-xl bg-stone-100" /></div>
+                            : storeQuery.isError ? <Panel className="mx-auto max-w-xl p-8 text-center"><h1 className="font-serif text-2xl">Store unavailable</h1><p className="mt-2 text-[12px] text-muted">{errorMessage(storeQuery.error)}</p><button type="button" onClick={() => storeQuery.refetch()} className="mt-4 rounded-lg bg-sage-dark px-4 py-2 text-[11px] font-bold text-white">Try again</button></Panel>
+                                : page}
+                    </div>
+                    <footer className="mx-auto mt-10 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-line py-4 text-[10px] text-muted"><span>© {new Date().getFullYear()} Chef Haazir · Grocery partner portal</span><Link to="/contact" className="hover:text-rust">Support desk</Link></footer>
+                </main>
+            </div>
+        </div>
+    )
+>>>>>>> cbcd0cf51cb289f35bda14121cec544dbb392937
 }
 
 // ---------------- Page shell ----------------

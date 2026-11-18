@@ -197,6 +197,53 @@ const Onboarding = ({ profile, queryClient }) => {
     )
 }
 
+// Where the booking's groceries are: Ordered -> Packed -> On the way -> Delivered, plus the store's contact
+const GROCERY_STEPS = [['ordered', 'Ordered'], ['packed', 'Packed'], ['out_for_delivery', 'On the way'], ['delivered_to_chef', 'Delivered']]
+const groceryMessages = {
+    ordered: 'The store has your order and is packing it.',
+    packed: 'Packed at the store, leaving soon.',
+    out_for_delivery: 'On the way to your home now.',
+    delivered_to_chef: 'Delivered. Take them along to the customer.',
+    return_requested: 'Return requested. Send the groceries back to the store.',
+    return_verified: 'The store received your returned groceries.',
+    cancelled: 'Grocery order cancelled with the booking.'
+}
+const GroceryTracker = ({ booking }) => {
+    const status = booking.groceryStatus
+    const reached = GROCERY_STEPS.findIndex(([key]) => key === status)
+    const done = ['return_requested', 'return_verified'].includes(status) ? 3 : reached
+    const store = booking.groceryStore && typeof booking.groceryStore === 'object' ? booking.groceryStore : null
+    const storePhone = store?.owner?.phone
+    const digits = (storePhone || '').replace(/\D/g, '')
+    const intl = digits.startsWith('0') ? `92${digits.slice(1)}` : digits
+    return (
+        <div className="mt-2 rounded-lg border border-sage/20 bg-sage-soft/40 px-3 py-3 text-[11px]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-1.5 font-bold text-sage-dark"><Icon name="truck" size={14}/> Groceries · {money(booking.grocerySubtotal)}</p>
+                {store && <p className="text-[10px] text-muted">From {store.name}</p>}
+            </div>
+            {status !== 'cancelled' && (
+                <ol className="mt-2.5 grid grid-cols-4 gap-1">
+                    {GROCERY_STEPS.map(([key, label], i) => (
+                        <li key={key} className="min-w-0">
+                            <div className="flex items-center"><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${i <= done ? 'bg-sage-dark' : 'bg-white ring-2 ring-line'}`}/>{i < 3 && <span className={`mx-1 h-0.5 flex-1 rounded ${i < done ? 'bg-sage-dark' : 'bg-line'}`}/>}</div>
+                            <p className={`mt-1 truncate text-[10px] font-semibold ${i <= done ? 'text-ink' : 'text-muted'}`}>{label}</p>
+                        </li>
+                    ))}
+                </ol>
+            )}
+            <p className="mt-2 text-ink/80">{groceryMessages[status] || ''}</p>
+            <p className="mt-1.5 text-ink/65">{booking.groceryItems.map((item) => `${item.name} × ${item.quantity} ${item.unit}`).join(' · ')}</p>
+            {storePhone && ['ordered', 'packed', 'out_for_delivery', 'return_requested'].includes(status) && (
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                    <a href={`tel:+${intl}`} className="inline-flex items-center gap-1 rounded-md border border-line bg-white px-2.5 py-1.5 text-[10px] font-bold hover:border-sage/50"><Icon name="phone" size={12}/> Call store</a>
+                    <a href={`https://wa.me/${intl}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-line bg-white px-2.5 py-1.5 text-[10px] font-bold hover:border-sage/50"><Icon name="chat" size={12}/> WhatsApp store</a>
+                </div>
+            )}
+        </div>
+    )
+}
+
 const BookingCard = ({ booking, onAction, busy }) => {
     const isPending = booking.status === 'pending'
     const canComplete = booking.status === 'confirmed' && booking.slotEnd && new Date(booking.slotEnd).getTime() <= Date.now()
@@ -210,7 +257,7 @@ const BookingCard = ({ booking, onAction, busy }) => {
                     <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted"><span className="inline-flex items-center gap-1"><Icon name="calendar" size={13}/>{dateLabel(booking.date)}</span><span>·</span><span>{slotLabel(booking.slot)}</span><span>·</span><span>{booking.address?.city}</span></p>
                     {booking.address?.street && <p className="mt-2 rounded-md bg-stone-50 px-3 py-2 text-[11px] text-ink/75"><Icon name="pin" size={12} className="mr-1 inline text-sage"/>{booking.address.street}</p>}
                     {booking.note && <div className="mt-2 rounded-md bg-stone-50 px-3 py-2"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Customer’s menu request</p><p className="mt-1 text-[12px] leading-relaxed text-ink/80">“{booking.note}”</p></div>}
-                    {(booking.groceryItems || []).length > 0 && <div className="mt-2 rounded-md bg-sage-soft/50 px-3 py-2 text-[11px]"><p className="font-bold text-sage-dark">Groceries · {booking.groceryStatus?.replaceAll('_', ' ')}</p><p className="mt-0.5 text-ink/75">{booking.groceryItems.map((item) => `${item.name} × ${item.quantity} ${item.unit}`).join(' · ')}</p></div>}
+                    {(booking.groceryItems || []).length > 0 && <GroceryTracker booking={booking}/>}
                     {booking.status === 'completed' && <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-sage/20 bg-sage-soft/40 px-3 py-2 text-[11px]"><span>Admin commission: <strong className="text-rust">{money(booking.commissionAmount)}</strong></span><span>Total payable to platform: <strong>{money(booking.payableToPlatform)}</strong></span><span>You keep from chef fee: <strong className="text-sage-dark">{money(booking.chefRate - booking.commissionAmount)}</strong></span></div>}
                 </div>
                 <div className="flex shrink-0 flex-row items-center justify-between gap-4 border-t border-line pt-3 sm:flex-col sm:items-end sm:border-0 sm:pt-0"><div className="text-left sm:text-right"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">{isPending ? 'Customer total' : 'Chef fee'}</p><p className="font-serif text-[22px] font-semibold">{money(isPending ? booking.totalFromCustomer : booking.chefRate)}</p><p className="text-[10px] text-muted">{isPending ? 'Cash after service' : '2-hour visit'}</p></div>
