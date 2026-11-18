@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
@@ -10,6 +9,7 @@ import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import Reveal from '../components/Reveal'
 import ChefCard, { ChefCardSkeleton } from '../components/ChefCard'
+import HeroChef from '../components/HeroChef'
 
 // ---------------------------------------------------------------------------
 // Home page. Every line of copy that makes a promise (verification, prices,
@@ -30,73 +30,55 @@ const heroStats = [
     { value: '2 hrs', title: 'Notice to add groceries', text: 'Your chef brings them along' }
 ]
 
-// Chef with a flaming pan, by Hemant Latawa (free under the Unsplash License)
-const heroImage = 'https://images.unsplash.com/flagged/photo-1561350117-501b4661f8d4?auto=format&fit=crop&w=2000&q=70'
-const heroCredit = 'https://unsplash.com/photos/chef-holding-fry-pan-RKdkETvcYn4'
+const Hero = () => (
+    <section className="bg-[radial-gradient(ellipse_at_72%_18%,#33563F_0%,#1F3A2D_52%,#16291F_100%)] text-white">
+        <div className="mx-auto max-w-7xl px-4 pb-14 pt-12 md:px-8 lg:pb-16 lg:pt-14">
+            <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+                <div>
+                    <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/90">
+                        <Icon name="shield" size={13} /> Verified home chefs across Pakistan
+                    </motion.span>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        className="mt-5 font-serif text-[48px] leading-[1.02] tracking-tight text-white sm:text-6xl lg:text-[66px]"
+                    >
+                        Ghar se door,
+                        <span className="block italic text-[#E98A4B]">Ghar ka khana.</span>
+                    </motion.h1>
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-5 max-w-xl text-[15px] leading-relaxed text-white/80">
+                        Book a verified home chef for a 2-hour slot. They cook fresh in your kitchen, with the groceries you choose, at a price fixed before you book.
+                    </motion.p>
+                    <motion.ul initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[12px] font-medium text-white/85">
+                        {trustPoints.map((p) => (
+                            <li key={p.text} className="flex items-center gap-1.5"><Icon name={p.icon} size={14} className="text-[#E7B65C]" /> {p.text}</li>
+                        ))}
+                    </motion.ul>
+                </div>
 
-const Hero = () => {
-    const [photoLoaded, setPhotoLoaded] = useState(false)
-    const [photoFailed, setPhotoFailed] = useState(false)
-
-    return (
-        <section className="relative isolate overflow-hidden bg-[#16291F] text-white">
-            {/* Photo covering the whole hero. If it fails to load, the dark green below still looks right. */}
-            {!photoFailed && (
-                <img
-                    src={heroImage}
-                    alt=""
-                    aria-hidden="true"
-                    fetchPriority="high"
-                    onLoad={() => setPhotoLoaded(true)}
-                    onError={() => setPhotoFailed(true)}
-                    className={`absolute inset-0 -z-20 h-full w-full object-cover object-center transition-opacity duration-1000 ${photoLoaded ? 'opacity-50' : 'opacity-0'}`}
-                />
-            )}
-            {/* Green tint: darker on the left where the text sits, lighter on the right so the chef shows */}
-            <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-r from-[#16291F]/95 via-[#1F3A2D]/80 to-[#1F3A2D]/45" />
-            <div aria-hidden="true" className="absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-[#16291F]/90 to-transparent" />
-
-            <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-12 md:px-8 lg:pb-16 lg:pt-16">
-                <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
-                    <Icon name="shield" size={13} /> Verified home chefs across Pakistan
-                </motion.span>
-                <motion.h1
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-5 font-serif text-[48px] leading-[1.02] tracking-tight text-white sm:text-6xl lg:text-[72px]"
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full max-w-[600px] lg:justify-self-end"
                 >
-                    Ghar se door,
-                    <span className="block italic text-[#E98A4B]">Ghar ka khana.</span>
-                </motion.h1>
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-5 max-w-xl text-[15px] leading-relaxed text-white/85">
-                    Book a verified home chef for a 2-hour slot. They cook fresh in your kitchen, with the groceries you choose, at a price fixed before you book.
-                </motion.p>
-                <motion.ul initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[12px] font-medium text-white/90">
-                    {trustPoints.map((p) => (
-                        <li key={p.text} className="flex items-center gap-1.5"><Icon name={p.icon} size={14} className="text-[#E7B65C]" /> {p.text}</li>
-                    ))}
-                </motion.ul>
-
-                <dl className="mt-12 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-                    {heroStats.map((st, i) => (
-                        <motion.div key={st.title} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.07, duration: 0.5 }} className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:p-5">
-                            <dt className="font-serif text-[30px] leading-none text-[#E7B65C] sm:text-[34px]">{st.value}</dt>
-                            <dd className="mt-3 text-[12.5px] font-semibold text-white">{st.title}</dd>
-                            <dd className="mt-1 text-[11px] leading-snug text-white/70">{st.text}</dd>
-                        </motion.div>
-                    ))}
-                </dl>
+                    <HeroChef />
+                </motion.div>
             </div>
 
-            {photoLoaded && (
-                <a href={heroCredit} target="_blank" rel="noreferrer" className="absolute bottom-2 right-4 text-[10px] text-white/40 transition hover:text-white/80">
-                    Photo: Hemant Latawa / Unsplash
-                </a>
-            )}
-        </section>
-    )
-}
+            <dl className="mt-12 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+                {heroStats.map((st, i) => (
+                    <motion.div key={st.title} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.07, duration: 0.5 }} className="rounded-xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
+                        <dt className="font-serif text-[30px] leading-none text-[#E7B65C] sm:text-[34px]">{st.value}</dt>
+                        <dd className="mt-3 text-[12.5px] font-semibold text-white">{st.title}</dd>
+                        <dd className="mt-1 text-[11px] leading-snug text-white/60">{st.text}</dd>
+                    </motion.div>
+                ))}
+            </dl>
+        </div>
+    </section>
+)
 
 // ---------------- How it works ----------------
 const steps = [
