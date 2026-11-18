@@ -32,7 +32,7 @@ const Field = ({ label, icon, children }) => (
     </label>
 )
 
-const selectClass = 'w-full appearance-none rounded-lg border border-line bg-cream py-2.5 pl-9 pr-9 text-[13px] font-medium text-ink outline-none transition focus:border-sage focus:ring-2 focus:ring-sage/20'
+const selectClass = 'w-full appearance-none rounded-lg border border-line bg-[#FBFAF7] py-2.5 pl-9 pr-9 text-[13px] font-medium text-ink outline-none transition focus:border-sage focus:ring-2 focus:ring-sage/20'
 
 const SearchCard = () => {
     const { city, setCity } = useCity()
@@ -50,7 +50,7 @@ const SearchCard = () => {
     }
 
     return (
-        <form onSubmit={submit} className="mt-8 rounded-2xl border border-line bg-white p-5 shadow-card sm:p-6">
+        <form onSubmit={submit} className="mt-8 rounded-2xl bg-white p-5 text-ink shadow-lift sm:p-6">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">What are you craving?</p>
             <div className="mt-3 flex flex-wrap gap-2">
                 {[{ value: '', label: 'Any cuisine' }, ...popularCuisines.map((c) => ({ value: c, label: c }))].map((c) => (
@@ -59,7 +59,7 @@ const SearchCard = () => {
                         type="button"
                         onClick={() => setCuisine(c.value)}
                         aria-pressed={cuisine === c.value}
-                        className={`rounded-md border px-3 py-1.5 text-[12px] font-semibold transition ${cuisine === c.value ? 'border-sage bg-sage text-white' : 'border-line bg-cream text-ink/75 hover:border-sage/50'}`}
+                        className={`rounded-md border px-3 py-1.5 text-[12px] font-semibold transition ${cuisine === c.value ? 'border-[#2F5240] bg-[#2F5240] text-white' : 'border-line bg-[#FBFAF7] text-ink/75 hover:border-sage/50'}`}
                     >
                         {c.label}
                     </button>
@@ -79,13 +79,13 @@ const SearchCard = () => {
                 </Field>
             </div>
 
-            <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-sage px-5 py-3.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-sage-dark active:scale-[0.99]">
+            <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-rust px-5 py-3.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-rust-dark active:scale-[0.99]">
                 <Icon name="search" size={16} strokeWidth={2.2} />
                 Find chefs in {city}
             </button>
 
             <div className="mt-5 grid grid-cols-1 gap-2 border-t border-line pt-4 text-[11.5px] text-muted sm:grid-cols-3">
-                <span className="flex items-center gap-1.5"><Icon name="checkCircle" size={14} className="text-sage" /> Verified home chefs</span>
+                <span className="flex items-center gap-1.5 sm:justify-start"><Icon name="checkCircle" size={14} className="text-sage" /> Verified home chefs</span>
                 <span className="flex items-center gap-1.5 sm:justify-center"><Icon name="tag" size={14} className="text-sage" /> Fixed price per slot</span>
                 <span className="flex items-center gap-1.5 sm:justify-end"><Icon name="wallet" size={14} className="text-sage" /> Pay after the meal</span>
             </div>
@@ -93,55 +93,76 @@ const SearchCard = () => {
     )
 }
 
+// Plain facts about how booking works, so every number here is true
+const heroStats = [
+    { value: '7', label: 'Fixed 2-hour slots every day' },
+    { value: '7 days', label: 'Book up to a week ahead' },
+    { value: 'Rs 0', label: 'Advance, pay after the meal' },
+    { value: '2 hrs', label: 'Notice needed to add groceries' }
+]
+
 const Hero = () => (
-    <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-10 md:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-24 lg:pt-14">
-        <div>
-            <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-1.5 rounded-full bg-sage-soft px-3 py-1 text-[11px] font-semibold text-sage">
-                <Icon name="shield" size={13} /> For students, bachelors & families away from home
-            </motion.span>
-            <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="mt-5 font-serif text-[48px] leading-[1.02] tracking-tight sm:text-6xl lg:text-[68px]"
+    <section className="bg-[radial-gradient(ellipse_at_72%_18%,#33563F_0%,#1F3A2D_52%,#16291F_100%)] text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-14 pt-10 md:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-16 lg:pt-14">
+            <div>
+                <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/90">
+                    <Icon name="shield" size={13} /> Verified home chefs across Pakistan
+                </motion.span>
+                <motion.h1
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-5 font-serif text-[48px] leading-[1.02] tracking-tight text-white sm:text-6xl lg:text-[68px]"
+                >
+                    Ghar se door,
+                    <span className="block italic text-[#E98A4B]">Ghar ka khana.</span>
+                </motion.h1>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-5 max-w-md text-[15px] leading-relaxed text-white/80">
+                    Book a verified home chef for a 2-hour slot. They cook fresh in your kitchen, and can bring the groceries along.
+                </motion.p>
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.6 }}>
+                    <SearchCard />
+                </motion.div>
+            </div>
+
+            <motion.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="relative"
             >
-                Ghar se door,
-                <span className="block italic text-rust">Ghar ka khana.</span>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-5 max-w-md text-[15px] leading-relaxed text-muted">
-                Book a verified home chef for a 2-hour slot. They cook in your kitchen, and can bring the groceries along.
-            </motion.p>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.6 }}>
-                <SearchCard />
+                <SafeImage src={images.heroKarahi} alt="Chicken karahi cooking on a home stove" eager className="aspect-[4/5] rounded-2xl shadow-lift ring-1 ring-white/10 sm:aspect-[5/5] lg:aspect-[4/5]" />
+                <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[12px] font-bold text-ink shadow-card">
+                    <Icon name="clock" size={14} className="text-rust" /> 7 slots daily · 8 AM – 10 PM
+                </span>
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6, duration: 0.5 }}
+                    className="absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-xl bg-white/95 p-3 text-ink shadow-lift backdrop-blur sm:inset-x-6 sm:bottom-6"
+                >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-rust-soft text-rust"><Icon name="pot" size={22} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold">Dinner slot · 6:00 – 8:00 PM</p>
+                        <p className="truncate text-[12px] text-muted">Chef arrives with your groceries, cooks, you pay after</p>
+                    </div>
+                    <span className="hidden items-center gap-1 rounded-md bg-sage-soft px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-sage sm:flex">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sage" /> 2 hrs
+                    </span>
+                </motion.div>
             </motion.div>
         </div>
 
-        <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
-        >
-            <SafeImage src={images.heroKarahi} alt="Chicken karahi cooking on a home stove" eager className="aspect-[4/5] rounded-2xl shadow-lift sm:aspect-[5/5] lg:aspect-[4/5]" />
-            <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[12px] font-bold shadow-card">
-                <Icon name="clock" size={14} className="text-rust" /> 7 slots daily · 8 AM – 10 PM
-            </span>
-            <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-                className="absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-xl bg-white/95 p-3 shadow-lift backdrop-blur sm:inset-x-6 sm:bottom-6"
-            >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-rust-soft text-rust"><Icon name="pot" size={22} /></span>
-                <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold">Dinner slot · 6:00 – 8:00 PM</p>
-                    <p className="truncate text-[12px] text-muted">Chef arrives with your groceries, cooks, you pay after</p>
-                </div>
-                <span className="hidden items-center gap-1 rounded-md bg-sage-soft px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-sage sm:flex">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sage" /> 2 hrs
-                </span>
-            </motion.div>
-        </motion.div>
+        <div className="border-t border-white/10">
+            <dl className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-6 px-4 py-8 md:px-8 lg:grid-cols-4">
+                {heroStats.map((st) => (
+                    <div key={st.label}>
+                        <dt className="font-serif text-[30px] leading-none text-[#E7B65C] sm:text-[34px]">{st.value}</dt>
+                        <dd className="mt-2 text-[11.5px] text-white/70">{st.label}</dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
     </section>
 )
 
@@ -170,23 +191,25 @@ const steps = [
 ]
 
 const HowItWorks = () => (
-    <section id="how-it-works" className="scroll-mt-20 bg-sand py-20 lg:py-24">
+    <section id="how-it-works" className="scroll-mt-20 bg-[#F8F5EF] py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
             <Reveal className="text-center">
-                <p className="eyebrow">Simple & accountable</p>
+                <p className="eyebrow">Effortless comfort</p>
                 <h2 className="mt-3 font-serif text-4xl tracking-tight md:text-[44px]">How Chef Haazir works</h2>
                 <p className="mx-auto mt-3 max-w-lg text-[15px] text-muted">A fixed price, a fixed 2-hour slot, and a record of every booking.</p>
             </Reveal>
             <div className="mt-12 grid gap-5 md:grid-cols-3">
                 {steps.map((s, i) => (
                     <Reveal key={s.title} delay={i * 0.1}>
-                        <article className="flex h-full flex-col rounded-xl border border-line bg-white p-7 shadow-card transition hover:-translate-y-1 hover:shadow-lift">
-                            <span className={`flex h-11 w-11 items-center justify-center rounded-lg ${s.tone}`}><Icon name={s.icon} size={21} /></span>
-                            <p className="mt-6 text-[11px] font-bold tracking-[0.14em] text-rust">STEP 0{i + 1}</p>
-                            <h3 className="mt-2 font-serif text-[23px] leading-tight">{s.title}</h3>
-                            <p className="mt-3 text-[14px] leading-relaxed text-muted">{s.text}</p>
+                        <article className="flex h-full flex-col rounded-xl border border-line bg-white p-6 shadow-card transition hover:-translate-y-1 hover:shadow-lift">
+                            <div className="flex items-start justify-between">
+                                <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.tone}`}><Icon name={s.icon} size={20} /></span>
+                                <p className="rounded bg-rust-soft px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-rust">STEP 0{i + 1}</p>
+                            </div>
+                            <h3 className="mt-5 font-serif text-[22px] leading-tight">{s.title}</h3>
+                            <p className="mt-3 text-[13.5px] leading-relaxed text-muted">{s.text}</p>
                             <div className="mt-auto pt-6">
-                                <p className="flex items-center gap-1.5 border-t border-line pt-4 text-[12px] font-medium text-ink/70">
+                                <p className="flex items-center gap-1.5 border-t border-line pt-4 text-[11.5px] font-medium text-ink/70">
                                     <Icon name={s.foot.icon} size={14} className="text-sage" /> {s.foot.text}
                                 </p>
                             </div>
@@ -220,7 +243,7 @@ const FeaturedChefs = () => {
             <div className="mx-auto max-w-7xl px-4 md:px-8">
                 <Reveal className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                     <div>
-                        <p className="eyebrow">{scope ? `${scope} home chefs` : 'Home chefs across Pakistan'}</p>
+                        <p className="eyebrow">{scope ? `${scope} culinary masters` : 'Home chefs across Pakistan'}</p>
                         <h2 className="mt-3 font-serif text-4xl tracking-tight md:text-[44px]">
                             Meet the <span className="italic text-rust">chefs</span> {scope ? 'near you' : 'on Chef Haazir'}
                         </h2>
@@ -273,7 +296,7 @@ const promises = [
 
 const GharKaZaiqa = () => (
     <section className="px-4 pb-20 md:px-8 lg:pb-24">
-        <Reveal className="mx-auto grid max-w-7xl overflow-hidden rounded-2xl border border-line bg-sand shadow-card lg:grid-cols-2">
+        <Reveal className="mx-auto grid max-w-7xl overflow-hidden rounded-2xl bg-[#F5F0E7] shadow-card lg:grid-cols-[1fr_1.05fr]">
             <SafeImage src={images.curryBowls} alt="Home-style curries served with rice" className="min-h-72 lg:min-h-[460px]" />
             <div className="flex flex-col justify-center p-8 sm:p-12">
                 <p className="eyebrow">Pure ghar ka zaiqa</p>
@@ -317,13 +340,13 @@ const PartnerBand = () => {
                 <div className="relative grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
                     <div>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
-                            <Icon name="chef" size={13} /> Chef partner network
+                            <Icon name="chef" size={13} /> Kitchen partner network
                         </span>
                         <h2 className="mt-5 font-serif text-4xl tracking-tight md:text-5xl">
-                            Cook like <span className="italic text-[#F2B98F]">ammi?</span> Earn from it.
+                            Missing <span className="italic text-[#F2B98F]">ammi’s cooking?</span>
                         </h2>
                         <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-white/85">
-                            Set your own rate for a 2-hour slot, between <strong className="text-white">Rs 500 and Rs 20,000</strong>, and cook in respectable homes in your city. The platform takes a <strong className="text-white">10% commission</strong> on completed bookings only.
+                            Cook like ammi and earn from it. Set your own rate for a 2-hour slot, between <strong className="text-white">Rs 500 and Rs 20,000</strong>, and cook in respectable homes in your city. The platform takes a <strong className="text-white">10% commission</strong> on completed bookings only.
                         </p>
                         <ul className="mt-6 flex flex-col gap-3 text-[14px] text-white/90 sm:flex-row sm:flex-wrap sm:gap-x-6">
                             {perks.map((p) => (
@@ -333,12 +356,9 @@ const PartnerBand = () => {
                     </div>
                     <div className="flex flex-col gap-3 lg:pl-8">
                         <Link to="/signup?role=chef" className="flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-3.5 text-[14px] font-semibold text-sage-dark shadow-sm transition hover:bg-cream">
-                            <Icon name="chef" size={17} /> Join as a chef
+                            <Icon name="plus" size={17} /> Join as a chef
                         </Link>
-                        <Link to="/signup?role=grocery_owner" className="flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-5 py-3.5 text-[14px] font-semibold text-white transition hover:bg-white/20">
-                            <Icon name="store" size={17} /> Run our grocery store in your city
-                        </Link>
-                        <Link to="/about#chef-contract" className="text-center text-[13px] text-white/75 underline-offset-4 hover:text-white hover:underline">
+                        <Link to="/about#chef-contract" className="flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-5 py-3.5 text-[14px] font-semibold text-white transition hover:bg-white/20">
                             How verification works
                         </Link>
                     </div>
