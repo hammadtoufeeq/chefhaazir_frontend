@@ -107,7 +107,7 @@ const DiscoverScreen = () => {
     )
 }
 
-const slotLabels = ['8–10 AM', '10–12 AM', '12–2 PM', '2–4 PM', '4–6 PM', '6–8 PM', '8–10 PM']
+const slotLabels = ['8–10 AM', '10 AM–12 PM', '12–2 PM', '2–4 PM', '4–6 PM', '6–8 PM', '8–10 PM']
 
 const BookScreen = () => {
     const days = Array.from({ length: 7 }, (_, n) => {
@@ -571,7 +571,7 @@ const chefDifferenceData = [
     {
         title: 'Verified Master Home Chef',
         isBad: false,
-        points: ['Piping hot straight from tawa to table, retaining full aroma & nutrients.', 'Tailored spice, oil & salt levels customized to your exact health needs.', '100% biometric NADRA verification and hygiene training protocols.', 'Spotless kitchen guarantee: pots washed and countertops sanitized before leaving.'],
+        points: ['Piping hot straight from tawa to table, retaining full aroma & nutrients.', 'Tailored spice, oil & salt levels: you write the menu in your booking note.', 'Phone-verified, contract-signed chefs approved by our team.', 'Fixed price for a 2-hour slot, paid in cash after the meal.'],
         footer: 'Zero stress. Total control.'
     }
 ]
@@ -588,36 +588,36 @@ const ChefDifference = () => (
             <div className="mt-10 flex flex-wrap justify-center gap-4">
                 <Reveal delay={0.1} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center">
                     <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="users" size={18} /></span>
-                    <p className="mt-3 text-2xl font-bold text-[#17392C]">3,200+</p>
-                    <p className="text-[12px] text-[#5E6B63]">Families served & daily meals hosted</p>
+                    <p className="mt-3 text-2xl font-bold text-[#17392C]">15 min</p>
+                    <p className="text-[12px] text-[#5E6B63]">Chefs accept or decline your request</p>
                 </Reveal>
                 <Reveal delay={0.2} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center">
                     <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="clock" size={18} /></span>
-                    <p className="mt-3 text-2xl font-bold text-[#17392C]">99.4%</p>
-                    <p className="text-[12px] text-[#5E6B63]">On-time punctuality rate</p>
+                    <p className="mt-3 text-2xl font-bold text-[#17392C]">2 hours</p>
+                    <p className="text-[12px] text-[#5E6B63]">One fixed-price cooking slot in your kitchen</p>
                 </Reveal>
                 <Reveal delay={0.3} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center">
                     <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="shield" size={18} /></span>
-                    <p className="mt-3 text-2xl font-bold text-[#17392C]">0%</p>
-                    <p className="text-[12px] text-[#5E6B63]">Artificial food colors or reheated mystery oil</p>
+                    <p className="mt-3 text-2xl font-bold text-[#17392C]">Rs 0</p>
+                    <p className="text-[12px] text-[#5E6B63]">Advance payment: pay in cash after the meal</p>
                 </Reveal>
             </div>
 
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
                 {chefDifferenceData.map((col, i) => (
-                    <Reveal key={col.title} delay={i * 0.1} className="rounded-2xl border border-[#17392C] bg-[#17392C] text-white p-6 flex flex-col">
+                    <Reveal key={col.title} delay={i * 0.1} className={`flex flex-col rounded-2xl border p-6 ${col.isBad ? 'border-[#E9E3D3] bg-[#FAF6EE] text-[#17392C]' : 'border-[#17392C] bg-[#17392C] text-white shadow-lift'}`}>
                         <div className="flex items-center justify-between">
-                            <h3 className="text-[14px] font-bold uppercase tracking-wider text-[#C2E35A]">{col.title}</h3>
-                            <Icon name="check" size={16} className="text-[#C2E35A]" />
+                            <h3 className={`text-[14px] font-bold uppercase tracking-wider ${col.isBad ? 'text-[#8A9189]' : 'text-[#C2E35A]'}`}>{col.title}</h3>
+                            <span className={`flex h-7 w-7 items-center justify-center rounded-full ${col.isBad ? 'bg-[#F5F0E4] text-[#8A9189]' : 'bg-[#C2E35A] text-[#17392C]'}`}><Icon name={col.isBad ? 'close' : 'check'} size={14} strokeWidth={2.6} /></span>
                         </div>
-                        <ul className="mt-4 space-y-2 text-[12.5px] leading-relaxed flex-1 text-white/80">
+                        <ul className={`mt-4 flex-1 space-y-2 text-[12.5px] leading-relaxed ${col.isBad ? 'text-[#5E6B63]' : 'text-white/85'}`}>
                             {col.points.map((p, idx) => (
                                 <li key={idx} className="flex gap-2">
-                                    <span className="mt-0.5 shrink-0 text-[#C2E35A]">•</span> {p}
+                                    <Icon name={col.isBad ? 'close' : 'check'} size={13} strokeWidth={2.6} className={`mt-0.5 shrink-0 ${col.isBad ? 'text-[#B4441C]/70' : 'text-[#C2E35A]'}`} /> {p}
                                 </li>
                             ))}
                         </ul>
-                        <div className="mt-6 border-t border-white/10 pt-3 text-[12px] font-semibold">
+                        <div className={`mt-6 border-t pt-3 text-[12px] font-semibold ${col.isBad ? 'border-[#E9E3D3] text-[#8A9189]' : 'border-white/10 text-[#C2E35A]'}`}>
                             {col.footer}
                         </div>
                     </Reveal>
@@ -628,10 +628,10 @@ const ChefDifference = () => (
 )
 
 const mealPlans = [
-    { icon: 'pot', tag: 'Daily Routine', title: 'Ghar Ka Khana (Daily)', desc: 'Fresh daal-chawal, roti, sabzi, and protein. Ideal for bachelors and bachelors looking to eat clean.', from: 'Rs 1,400', col: 'bg-[#F8D9B6]' },
-    { icon: 'sparkle', tag: 'Celebrations', title: 'Weekend Dawat & BBQ', desc: 'Zafrani mutton biryani, live charcoal seekh kebab, and more. Let us handle the party.', from: 'Rs 4,500', col: 'bg-[#C2E35A]' },
-    { icon: 'basket', tag: 'Therapeutic', title: 'Health & Senior Diet', desc: 'Diabetic-friendly, low-sodium, low-GI meals with portion-controlled meals suitable for elderly.', from: 'Rs 1,400', col: 'bg-[#D3F0DE]' },
-    { icon: 'truck', tag: 'Express', title: '30-Min Dispatch', desc: 'Surprise guests but haven\'t cooked? Get a verified chef at your door in 30 minutes.', from: 'Rs 1,850', col: 'bg-[#F5F0E4]' }
+    { icon: 'pot', tag: 'Daily routine', title: 'Ghar ka khana (daily)', desc: 'Fresh daal-chawal, roti, sabzi and a salan. Ideal for students and bachelors who want to eat clean.', cuisine: 'Desi', col: 'bg-[#F8D9B6]' },
+    { icon: 'sparkle', tag: 'Celebrations', title: 'Weekend dawat & BBQ', desc: 'Biryani, karahi, seekh kebab and more for your guests. Tell the chef the menu and the number of people.', cuisine: 'BBQ', col: 'bg-[#C2E35A]' },
+    { icon: 'basket', tag: 'Lighter meals', title: 'Healthy home food', desc: 'Less oil, less salt, grilled and steamed dishes. Write your diet needs in the booking note.', cuisine: 'Healthy', col: 'bg-[#D3F0DE]' },
+    { icon: 'users', tag: 'Shared flats', title: 'Meal prep for flatmates', desc: 'Book one 2-hour slot, cook two or three days of meals, and split the cost with your flatmates.', cuisine: '', col: 'bg-[#F5F0E4]' }
 ]
 
 const MealPlans = () => (
@@ -644,7 +644,7 @@ const MealPlans = () => (
                     <p className="mt-2 text-[15px] text-[#5E6B63]">Whether it's your daily rotis or an elaborate 20-guest weekend dawat, we have you covered.</p>
                 </div>
                 <Link to="/chefs" className="group flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-[#17392C]">
-                    Explore all custom menus <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
+                    See all chefs <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
                 </Link>
             </Reveal>
 
@@ -657,8 +657,8 @@ const MealPlans = () => (
                             <h3 style={heading} className="mt-1 text-[17px] text-[#17392C]">{plan.title}</h3>
                             <p className="mt-2 text-[12.5px] leading-relaxed text-[#5E6B63] flex-1">{plan.desc}</p>
                             <div className="mt-5 border-t border-[#EFE9DA] pt-4 flex items-center justify-between">
-                                <p className="text-[15px] font-bold text-[#17392C]">{plan.from} <span className="text-[10px] font-medium text-[#8A9189]">/ starting</span></p>
-                                <Link to="/chefs" className="rounded-full bg-[#17392C] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0F2A20]">Book Now</Link>
+                                <p className="text-[12px] font-semibold text-[#5E6B63]">Fixed price per 2-hr slot</p>
+                                <Link to={plan.cuisine ? `/chefs?cuisine=${encodeURIComponent(plan.cuisine)}` : '/chefs'} className="rounded-full bg-[#17392C] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0F2A20]">Find chefs</Link>
                             </div>
                         </div>
                     </Reveal>
@@ -669,18 +669,18 @@ const MealPlans = () => (
 )
 
 const purityPillars = [
-    { num: '01', title: 'Biometric & NADRA Vetting', desc: 'Every chef undergoes rigorous NADRA background checks, medical fitness, character clearance, and in-person culinary training before their first booking.' },
-    { num: '02', title: 'Pure Kiryana & Farm Cuts', desc: 'Certified stone-ground spices, zero-adulteration oils, and fresh meat from trusted local butchers. No frozen cuts, ever.' },
-    { num: '03', title: 'Spotless Kitchen Promise', desc: 'We leave your kitchen cleaner than we found it. All cooking vessels, stove tops, and dining counters wiped thoroughly.' },
-    { num: '04', title: 'Taste-First Escrow', desc: 'Pay safely in cash or bank transfer only after the meal is cooked to your liking. Free cancellation up to 60 minutes before your slot.' }
+    { num: '01', title: 'Verified before the first booking', desc: 'Every chef verifies their phone number, signs our chef contract and legal declaration, and is approved by our team before customers can book them.' },
+    { num: '02', title: 'Groceries from our city store', desc: 'Add atta, meat, sabzi and masalas when you book. Prices are locked into your booking and the store delivers them to your chef before the slot.' },
+    { num: '03', title: 'Report any problem', desc: 'Something went wrong? Report it from the slot start until 24 hours after. Our team reviews every report and can suspend accounts.' },
+    { num: '04', title: 'Pay after the meal', desc: 'No advance payment. Pay the chef in cash once the food is ready. Free cancellation until 1.5 hours before your slot.' }
 ]
 
 const PurityPromise = () => (
     <section className="bg-white py-20 lg:py-24 border-t border-[#F5F0E4]">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
             <Reveal className="text-center max-w-3xl mx-auto">
-                <Pill className="bg-[#D3F0DE] text-[#17392C]">Zero Risk Guarantee</Pill>
-                <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[44px]">Our 4-Pillar Purity Promise</h2>
+                <Pill className="bg-[#D3F0DE] text-[#17392C]">Our promise</Pill>
+                <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[44px]">Four promises on every booking</h2>
                 <p className="mt-3 text-[15px] text-[#5E6B63]">Your home, safety, and health are sacred. Here is how we protect every meal.</p>
             </Reveal>
 

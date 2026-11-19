@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import api, { errorMessage } from '../lib/api'
@@ -49,8 +49,10 @@ const BookingCard = ({ chef }) => {
     const { user } = useAuth()
     const today = todayInPakistan()
     const dates = useMemo(() => Array.from({ length: DAYS_AHEAD + 1 }, (_, i) => addDays(today, i)), [today])
-    const [date, setDate] = useState(today)
-    const [slot, setSlot] = useState('')
+    // A date and slot picked on Find Chefs (?date=&slot=) are preselected
+    const [params] = useSearchParams()
+    const [date, setDate] = useState(() => dates.includes(params.get('date')) ? params.get('date') : today)
+    const [slot, setSlot] = useState(() => params.get('slot') || '')
 
     const { data: slots, isLoading, isError, refetch } = useQuery({
         queryKey: ['availability', chef.id, date],
