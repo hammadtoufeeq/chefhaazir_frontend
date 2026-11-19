@@ -697,45 +697,6 @@ const PurityPromise = () => (
     </section>
 )
 
-const reviews = [
-    { text: `"Booked Shabana Baji for a mini family lunch. The mutton karahi and pulao were unmatched. And she cleaned the stove top even better than before."`, name: 'Sidra & Zeeshan', sub: 'DHA Phase 6, Karachi' },
-    { text: `"Wish there was something as hygienic as this. My kitchen was left spotless and the food was as good as my mother's. 10/10."`, name: 'Hasan Raza', sub: 'F-10, Islamabad' },
-    { text: `"My mother is diabetic. The chef prepared a completely sugar-free, low-salt meal for her. This is a blessing."`, name: 'Dr. Ayesha Malik', sub: 'Gulberg, Lahore' }
-]
-
-const Testimonials = () => (
-    <section className="bg-[#FAF6EE] py-16">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
-            <Reveal className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-                <div>
-                    <h2 style={heading} className="text-2xl text-[#17392C] md:text-3xl">Loved by 2,400+ Families</h2>
-                    <p className="text-[14px] text-[#5E6B63] mt-1">Real feedback from verified hosts across Lahore, Karachi & Islamabad.</p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="flex text-[#D48A3C]">
-                        {[1,2,3,4,5].map(i => <Icon key={i} name="star" size={14} fill="currentColor" />)}
-                    </div>
-                    <p className="text-[12px] font-semibold text-[#17392C]">4.9 out of 5 Average Rating</p>
-                </div>
-            </Reveal>
-            <div className="grid gap-4 md:grid-cols-3">
-                {reviews.map((r, i) => (
-                    <Reveal key={i} delay={i * 0.1} className="rounded-2xl bg-white p-5 shadow-sm border border-[#E9E3D3]">
-                        <p className="text-[13px] italic leading-relaxed text-[#4E5F55]">"{r.text}"</p>
-                        <div className="mt-4 flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-[#E9E3D3]" />
-                            <div>
-                                <p className="text-[12px] font-bold text-[#17392C]">{r.name}</p>
-                                <p className="text-[10px] text-[#8A9189]">{r.sub}</p>
-                            </div>
-                        </div>
-                    </Reveal>
-                ))}
-            </div>
-        </div>
-    </section>
-)
-
 // ---------------- Closing call to action ----------------
 const ClosingCta = () => {
     const { user } = useAuth()
@@ -772,7 +733,6 @@ const Home = () => (
         <ChefDifference />
         <MealPlans />
         <PurityPromise />
-        <Testimonials />
         <ClosingCta />
     </>
 )
