@@ -22,7 +22,7 @@ const Pill = ({ children, className = '' }) => (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${className}`}>{children}</span>
 )
 
-// ---------------- Hero Section (Unchanged) ----------------
+// ---------------- Hero Section ----------------
 const Rings = () => (
     <svg aria-hidden="true" className="pointer-events-none absolute -right-48 top-1/2 h-[900px] w-[900px] -translate-y-1/2 text-[#17392C]" viewBox="0 0 900 900" fill="none">
         {[130, 210, 290, 370, 450].map((r) => <circle key={r} cx="450" cy="450" r={r} stroke="currentColor" strokeOpacity="0.07" strokeWidth="1.5" />)}
@@ -259,8 +259,8 @@ const PhoneMock = () => {
     const bob = (duration, delay = 0) => (reduce ? {} : { animate: { y: [0, -8, 0] }, transition: { duration, repeat: Infinity, ease: 'easeInOut', delay } })
 
     return (
-        <div className="relative mx-auto w-full max-w-[470px] lg:justify-self-end">
-            <div className="relative rounded-[34px] border border-[#E9E3D3] bg-white p-5 shadow-[0_30px_80px_-20px_rgba(23,57,44,0.28)] sm:p-6" role="group" aria-roledescription="carousel" aria-label="Chef Haazir app screens">
+        <div className="relative mx-auto w-full max-w-[320px] sm:max-w-[360px] lg:max-w-[470px] lg:justify-self-end">
+            <div className="relative rounded-[34px] border border-[#E9E3D3] bg-white p-4 shadow-[0_30px_80px_-20px_rgba(23,57,44,0.28)] sm:p-6" role="group" aria-roledescription="carousel" aria-label="Chef Haazir app screens">
                 <div className="flex items-center justify-between text-[11px] font-semibold text-[#17392C]">
                     <span>09:41</span>
                     <span className="flex items-end gap-0.5" aria-hidden="true">
@@ -299,14 +299,14 @@ const PhoneMock = () => {
                 </div>
             </div>
 
-            <motion.div {...bob(5)} className="absolute -right-2 -top-6 rounded-2xl bg-[#F8D9B6] px-4 py-3 shadow-card sm:-right-8">
-                <p className="flex items-center gap-1.5 text-[10px] font-semibold text-[#17392C]/70"><Icon name="clock" size={12} /> Fixed slot</p>
-                <p className="mt-0.5 text-[18px] font-bold leading-none text-[#17392C]">2 hours</p>
+            <motion.div {...bob(5)} className="absolute -right-2 -top-4 rounded-2xl bg-[#F8D9B6] px-3 py-2 shadow-card sm:-right-6 sm:px-4 sm:py-3">
+                <p className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-semibold text-[#17392C]/70"><Icon name="clock" size={12} /> Fixed slot</p>
+                <p className="mt-0.5 text-[15px] sm:text-[18px] font-bold leading-none text-[#17392C]">2 hours</p>
             </motion.div>
 
-            <motion.div {...bob(5.5, 0.8)} className="absolute -bottom-6 -right-2 rounded-2xl bg-[#C2E35A] px-4 py-3 shadow-card sm:-right-8">
-                <p className="flex items-center gap-1.5 text-[10px] font-semibold text-[#17392C]/70"><Icon name="basket" size={12} /> Groceries</p>
-                <p className="mt-0.5 text-[15px] font-bold leading-none text-[#17392C]">Free Delivery over Rs 500</p>
+            <motion.div {...bob(5.5, 0.8)} className="absolute -bottom-4 -right-2 rounded-2xl bg-[#C2E35A] px-3 py-2 shadow-card sm:-bottom-6 sm:-right-6 sm:px-4 sm:py-3">
+                <p className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-semibold text-[#17392C]/70"><Icon name="basket" size={12} /> Groceries</p>
+                <p className="mt-0.5 text-[13px] sm:text-[15px] font-bold leading-none text-[#17392C]">Free over Rs 500</p>
             </motion.div>
         </div>
     )
@@ -321,58 +321,60 @@ const Hero = () => {
     return (
         <section className="relative overflow-hidden bg-[#FAF6EE]">
             <Rings />
-            <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 pb-8 pt-6 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:gap-10 lg:pb-12 lg:pt-10">
-                <div>
-                    <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 rounded-full border border-[#E5DFCF] bg-white px-3 py-1 text-[10.5px] font-semibold text-[#17392C]">
+            <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-8 px-4 pb-10 pt-8 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:gap-10 lg:pb-16 lg:pt-12">
+                <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
+                    <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 rounded-full border border-[#E5DFCF] bg-white px-3 py-1 text-[10px] sm:text-[10.5px] font-semibold text-[#17392C]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#7DBB3A]" /> Verified home chefs across Pakistan
                     </motion.span>
                     
-                    <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} style={heading} className="mt-3 text-[36px] leading-[1.08] text-[#17392C] sm:text-[44px] lg:text-[50px]">
+                    <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} style={heading} className="mt-4 text-[36px] leading-[1.1] text-[#17392C] sm:text-5xl lg:text-[56px]">
                         Ghar se door,<br />Ghar ka khana.
                     </motion.h1>
                     
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-3 max-w-md text-[14px] leading-relaxed text-[#4E5F55]">
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-4 max-w-sm lg:max-w-md text-[14px] sm:text-[15px] leading-relaxed text-[#4E5F55]">
                         Find verified home chefs, book authentic home cooking in your own kitchen, and add fresh groceries, all in one place.
                     </motion.p>
                     
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} className="mt-5 flex flex-wrap gap-3">
-                        <Link to="/chefs" className="group inline-flex items-center gap-2 rounded-full bg-[#17392C] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F2A20]">
-                            Find a chef <Icon name="arrowRight" size={14} className="transition group-hover:translate-x-1" />
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} className="mt-6 flex w-full flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+                        <Link to="/chefs" className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#17392C] px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-[#0F2A20]">
+                            Find a chef <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
                         </Link>
                         {canBecomeChef && (
-                            <Link to="/signup?role=chef" className="inline-flex items-center rounded-full border border-[#D9D2BF] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#17392C] transition hover:border-[#17392C]/40">
+                            <Link to="/signup?role=chef" className="inline-flex w-full sm:w-auto items-center justify-center rounded-full border border-[#D9D2BF] bg-white px-6 py-3 text-[14px] font-semibold text-[#17392C] transition hover:border-[#17392C]/40">
                                 Become a chef
                             </Link>
                         )}
                     </motion.div>
 
-                    <ul className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-[#4E5F55]">
+                    <ul className="mt-6 flex flex-wrap justify-center lg:justify-start items-center gap-x-4 gap-y-2 text-[11px] sm:text-[12px] font-medium text-[#4E5F55]">
                         {trust.map((t) => (
                             <li key={t} className="flex items-center gap-1.5">
-                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#D3F0DE] text-[#17392C]"><Icon name="check" size={10} strokeWidth={3} /></span> {t}
+                                <span className="flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#D3F0DE] text-[#17392C]"><Icon name="check" size={10} strokeWidth={3} /></span> {t}
                             </li>
                         ))}
                     </ul>
 
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#E9E3D3] pt-3">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6 flex flex-wrap justify-center lg:justify-start items-center gap-x-6 gap-y-3 border-t border-[#E9E3D3] pt-5 w-full">
                         <div className="flex items-center gap-2">
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F8D9B6] text-[#17392C]"><Icon name="chef" size={15} /></span>
-                            <div className="leading-tight">
-                                <p className="text-[11.5px] font-bold text-[#17392C]">100% Verified Chefs</p>
-                                <p className="text-[10px] text-[#5E6B63]">Handpicked & trusted</p>
+                            <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-[#F8D9B6] text-[#17392C]"><Icon name="chef" size={15} /></span>
+                            <div className="leading-tight text-left">
+                                <p className="text-[11px] sm:text-[12.5px] font-bold text-[#17392C]">100% Verified Chefs</p>
+                                <p className="text-[10px] sm:text-[11px] text-[#5E6B63]">Handpicked & trusted</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#C2E35A] text-[#17392C]"><Icon name="basket" size={15} /></span>
-                            <div className="leading-tight">
-                                <p className="text-[11.5px] font-bold text-[#17392C]">Fresh Groceries</p>
-                                <p className="text-[10px] text-[#5E6B63]">Delivered to your chef</p>
+                            <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-[#C2E35A] text-[#17392C]"><Icon name="basket" size={15} /></span>
+                            <div className="leading-tight text-left">
+                                <p className="text-[11px] sm:text-[12.5px] font-bold text-[#17392C]">Fresh Groceries</p>
+                                <p className="text-[10px] sm:text-[11px] text-[#5E6B63]">Delivered to your chef</p>
                             </div>
                         </div>
                     </motion.div>
                 </div>
 
-                <PhoneMock />
+                <div className="mt-4 lg:mt-0">
+                    <PhoneMock />
+                </div>
             </div>
         </section>
     )
@@ -387,21 +389,21 @@ const steps = [
 ]
 
 const HowItWorks = () => (
-    <section id="how-it-works" className="scroll-mt-20 bg-white py-20 lg:py-24">
+    <section id="how-it-works" className="scroll-mt-20 bg-white py-14 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
             <Reveal className="text-center">
                 <Pill className="bg-[#D3F0DE] text-[#17392C]">Simple & seamless</Pill>
-                <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[44px]">How Chef Haazir works</h2>
-                <p className="mx-auto mt-3 max-w-lg text-[15px] text-[#5E6B63]">Ghar ka maza, bila kisi jhanjhat. Authentic home-cooked meals right at your table.</p>
+                <h2 style={heading} className="mt-4 text-3xl text-[#17392C] sm:text-4xl md:text-[44px]">How Chef Haazir works</h2>
+                <p className="mx-auto mt-3 max-w-lg text-[13px] sm:text-[15px] text-[#5E6B63]">Ghar ka maza, bila kisi jhanjhat. Authentic home-cooked meals right at your table.</p>
             </Reveal>
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {steps.map((s, i) => (
                     <Reveal key={s.title} delay={i * 0.08}>
-                        <motion.article whileHover={{ y: -6 }} className="flex h-full min-h-[260px] flex-col rounded-2xl bg-[#F8F4EB] p-6 transition-shadow hover:shadow-lg">
-                            <span className={`flex h-10 w-10 items-center justify-center rounded-xl text-[13px] font-bold ${s.badge}`}>0{i + 1}</span>
-                            <h3 style={heading} className="mt-6 text-[19px] text-[#17392C]">{s.title}</h3>
-                            <p className="mt-3 text-[13.5px] leading-relaxed text-[#5E6B63]">{s.text}</p>
-                            <p className="mt-auto flex items-center justify-between pt-6 text-[11.5px] font-semibold text-[#17392C]">
+                        <motion.article whileHover={{ y: -6 }} className="flex h-full min-h-[240px] flex-col rounded-2xl bg-[#F8F4EB] p-5 sm:p-6 transition-shadow hover:shadow-lg">
+                            <span className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-[12px] sm:text-[13px] font-bold ${s.badge}`}>0{i + 1}</span>
+                            <h3 style={heading} className="mt-4 sm:mt-5 text-[17px] sm:text-[19px] text-[#17392C]">{s.title}</h3>
+                            <p className="mt-2 text-[12.5px] sm:text-[13.5px] leading-relaxed text-[#5E6B63]">{s.text}</p>
+                            <p className="mt-auto flex items-center justify-between pt-5 sm:pt-6 text-[11px] sm:text-[11.5px] font-semibold text-[#17392C]">
                                 {s.foot} <Icon name="check" size={14} strokeWidth={2.4} className="text-[#5E8A2E]" />
                             </p>
                         </motion.article>
@@ -416,26 +418,26 @@ const HowItWorks = () => (
 const MasterChefCard = ({ chef }) => (
     <motion.article whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} className="flex h-full flex-col rounded-2xl border border-[#E9E3D3] bg-white p-3 shadow-sm hover:shadow-xl">
         <div className="relative">
-            <SafeImage src={chefPhoto(chef)} alt={`${chef.cuisines[0] || 'Home'} food`} className="h-44 rounded-xl" />
-            <span className="absolute left-3 top-3 rounded-full bg-[#C2E35A] px-2.5 py-1 text-[11px] font-bold text-[#17392C]">{chef.cuisines[0] || 'Home cooking'}</span>
-            <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[#17392C] backdrop-blur-sm"><Icon name="pin" size={12} /> {chef.city}</span>
+            <SafeImage src={chefPhoto(chef)} alt={`${chef.cuisines[0] || 'Home'} food`} className="h-40 sm:h-44 rounded-xl object-cover" />
+            <span className="absolute left-3 top-3 rounded-full bg-[#C2E35A] px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-bold text-[#17392C]">{chef.cuisines[0] || 'Home cooking'}</span>
+            <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold text-[#17392C] backdrop-blur-sm"><Icon name="pin" size={11} /> {chef.city}</span>
         </div>
-        <div className="flex flex-1 flex-col px-3 pb-3 pt-4">
+        <div className="flex flex-1 flex-col px-2 sm:px-3 pb-2 sm:pb-3 pt-4">
             <div className="flex items-center justify-between gap-2">
-                <h3 style={heading} className="text-[20px] text-[#17392C]">{chef.name}</h3>
-                <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#D3F0DE] px-2 py-0.5 text-[10px] font-bold text-[#17392C]"><Icon name="shield" size={11} /> Verified</span>
+                <h3 style={heading} className="text-[18px] sm:text-[20px] text-[#17392C]">{chef.name}</h3>
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#D3F0DE] px-1.5 py-0.5 sm:px-2 text-[9px] sm:text-[10px] font-bold text-[#17392C]"><Icon name="shield" size={10} /> Verified</span>
             </div>
-            {chef.bio && <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#5E6B63]">{chef.bio}</p>}
+            {chef.bio && <p className="mt-2 line-clamp-2 text-[12px] sm:text-[13px] leading-relaxed text-[#5E6B63]">{chef.bio}</p>}
             <div className="mt-3 flex flex-wrap gap-1.5">
-                {chef.cuisines.slice(0, 3).map((c) => <span key={c} className="rounded-full bg-[#F5F0E4] px-2.5 py-1 text-[11px] font-medium text-[#4E5F55]">{c}</span>)}
+                {chef.cuisines.slice(0, 3).map((c) => <span key={c} className="rounded-full bg-[#F5F0E4] px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-medium text-[#4E5F55]">{c}</span>)}
             </div>
-            <div className="min-h-5 flex-1" />
-            <div className="mt-5 flex items-end justify-between border-t border-[#EFE9DA] pt-4">
+            <div className="min-h-4 flex-1" />
+            <div className="mt-4 sm:mt-5 flex items-end justify-between border-t border-[#EFE9DA] pt-3 sm:pt-4">
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A9189]">Cooking slot</p>
-                    <p className="text-[18px] font-bold text-[#17392C]">Rs {chef.ratePerSlot.toLocaleString()} <span className="text-[11px] font-medium text-[#8A9189]">/ 2-hr slot</span></p>
+                    <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A9189]">Cooking slot</p>
+                    <p className="text-[16px] sm:text-[18px] font-bold text-[#17392C]">Rs {chef.ratePerSlot.toLocaleString()} <span className="text-[10px] sm:text-[11px] font-medium text-[#8A9189]">/ 2-hr slot</span></p>
                 </div>
-                <Link to={`/chefs/${chef.id}`} className="rounded-full bg-[#17392C] px-5 py-2.5 text-[12.5px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">Book chef</Link>
+                <Link to={`/chefs/${chef.id}`} className="rounded-full bg-[#17392C] px-4 sm:px-5 py-2 sm:py-2.5 text-[11px] sm:text-[12.5px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">Book chef</Link>
             </div>
         </div>
     </motion.article>
@@ -443,7 +445,7 @@ const MasterChefCard = ({ chef }) => (
 
 const MasterChefSkeleton = () => (
     <div className="rounded-2xl border border-[#E9E3D3] bg-white p-3 shadow-card">
-        <div className="h-44 animate-pulse rounded-xl bg-[#F5F0E4]" />
+        <div className="h-40 sm:h-44 animate-pulse rounded-xl bg-[#F5F0E4]" />
         <div className="space-y-3 p-3">
             <div className="h-5 w-2/3 animate-pulse rounded bg-[#F5F0E4]" />
             <div className="h-4 w-full animate-pulse rounded bg-[#F5F0E4]" />
@@ -468,22 +470,22 @@ const MasterChefs = () => {
     const total = data?.pagination?.total ?? 0
 
     return (
-        <section className="bg-[#F8F4EB] py-20 lg:py-24">
+        <section className="bg-[#F8F4EB] py-14 lg:py-24">
             <div className="mx-auto max-w-7xl px-4 md:px-8">
                 <Reveal className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                     <div>
                         <Pill className="border border-[#D9D2BF] text-[#17392C]">Verified chefs</Pill>
-                        <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[42px]">Meet neighborhood master chefs</h2>
-                        <p className="mt-2 text-[15px] text-[#5E6B63]">{isLoading ? 'Finding chefs…' : scope ? `Home cooks taking 2-hour slots in ${scope} this week.` : `No chefs in ${city} yet, so here are chefs from other cities.`}</p>
+                        <h2 style={heading} className="mt-4 text-3xl text-[#17392C] sm:text-4xl md:text-[42px]">Meet neighborhood master chefs</h2>
+                        <p className="mt-2 text-[13px] sm:text-[15px] text-[#5E6B63]">{isLoading ? 'Finding chefs…' : scope ? `Home cooks taking 2-hour slots in ${scope} this week.` : `No chefs in ${city} yet, so here are chefs from other cities.`}</p>
                     </div>
                     {total > 0 && (
-                        <Link to={scope ? `/chefs?city=${encodeURIComponent(scope)}` : '/chefs'} className="group flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-[#17392C]">
+                        <Link to={scope ? `/chefs?city=${encodeURIComponent(scope)}` : '/chefs'} className="group flex shrink-0 items-center gap-1.5 text-[12px] sm:text-[13px] font-semibold text-[#17392C]">
                             View all verified chefs <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
                         </Link>
                     )}
                 </Reveal>
 
-                <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {isLoading && [0, 1, 2].map((i) => <MasterChefSkeleton key={i} />)}
                     {data?.chefs.map((chef, i) => (
                         <Reveal key={chef.id} delay={i * 0.08}><MasterChefCard chef={chef} /></Reveal>
@@ -491,17 +493,17 @@ const MasterChefs = () => {
                 </div>
 
                 {isError && (
-                    <div className="rounded-2xl border border-[#E9E3D3] bg-white p-10 text-center shadow-card">
-                        <p style={heading} className="text-2xl text-[#17392C]">Couldn’t load chefs right now</p>
+                    <div className="rounded-2xl border border-[#E9E3D3] bg-white p-8 text-center shadow-card">
+                        <p style={heading} className="text-xl sm:text-2xl text-[#17392C]">Couldn’t load chefs right now</p>
                         <p className="mt-2 text-sm text-[#5E6B63]">Please check your connection and try again.</p>
                         <button type="button" onClick={() => refetch()} className="mt-5 rounded-full bg-[#17392C] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#0F2A20]">Try again</button>
                     </div>
                 )}
 
                 {data && data.chefs.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-[#D9D2BF] bg-white p-10 text-center">
+                    <div className="rounded-2xl border border-dashed border-[#D9D2BF] bg-white p-8 text-center">
                         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#D3F0DE] text-[#17392C]"><Icon name="chef" size={24} /></span>
-                        <p style={heading} className="mt-4 text-2xl text-[#17392C]">Our first chefs are joining soon</p>
+                        <p style={heading} className="mt-4 text-xl sm:text-2xl text-[#17392C]">Our first chefs are joining soon</p>
                         <p className="mt-2 text-sm text-[#5E6B63]">Love to cook? Be one of the first home chefs on Chef Haazir.</p>
                         <Link to="/signup?role=chef" className="mt-5 inline-flex rounded-full bg-[#17392C] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#0F2A20]">Join as a chef</Link>
                     </div>
@@ -518,35 +520,35 @@ const groceryFacts = [
 ]
 
 const Groceries = () => (
-    <section className="bg-white px-4 py-20 md:px-8 lg:py-24">
-        <Reveal className="mx-auto grid max-w-7xl items-center gap-10 rounded-[28px] bg-[#F5F0E4] p-6 sm:p-10 lg:grid-cols-2 lg:gap-14 lg:p-14">
-            <div>
+    <section className="bg-white px-4 py-14 md:px-8 lg:py-24">
+        <Reveal className="mx-auto grid max-w-7xl items-center gap-8 rounded-[28px] bg-[#F5F0E4] p-6 sm:p-10 lg:grid-cols-2 lg:gap-14 lg:p-14">
+            <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
                 <Pill className="bg-[#C2E35A] text-[#17392C]">Zero grocery hassle</Pill>
-                <h2 style={heading} className="mt-5 text-[34px] text-[#17392C] md:text-[42px]">Don’t have groceries? Your chef brings everything.</h2>
-                <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-[#5E6B63]">
+                <h2 style={heading} className="mt-4 text-2xl sm:text-3xl text-[#17392C] md:text-[42px]">Don’t have groceries? Your chef brings everything.</h2>
+                <p className="mt-4 max-w-lg text-[13px] sm:text-[15px] leading-relaxed text-[#5E6B63]">
                     Never worry about missing ginger, crushed coriander or stale meat. Add groceries when you book, and your city’s grocery store sends the ingredients to your chef before your slot, in the exact quantities you choose.
                 </p>
-                <div className="mt-6 grid max-w-lg gap-3 sm:grid-cols-2">
+                <div className="mt-6 grid w-full max-w-lg gap-3 sm:grid-cols-2">
                     {groceryFacts.map((f) => (
-                        <div key={f.title} className="rounded-xl bg-white p-4 transition hover:shadow-sm">
-                            <p className="text-[14px] font-bold text-[#17392C]">{f.title}</p>
-                            <p className="mt-1 text-[12px] text-[#5E6B63]">{f.text}</p>
+                        <div key={f.title} className="rounded-xl bg-white p-4 transition hover:shadow-sm text-left">
+                            <p className="text-[13px] sm:text-[14px] font-bold text-[#17392C]">{f.title}</p>
+                            <p className="mt-1 text-[11px] sm:text-[12px] text-[#5E6B63]">{f.text}</p>
                         </div>
                     ))}
                 </div>
-                <Link to="/grocery" className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#17392C] px-6 py-3.5 text-[13.5px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">
+                <Link to="/grocery" className="group mt-6 inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full bg-[#17392C] px-6 py-3.5 text-[13px] sm:text-[13.5px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">
                     Explore kiryana pantry <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
                 </Link>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-[#E9E3D3] bg-white p-3 shadow-card">
-                <SafeImage src={images.spiceBowls} alt="Pantry and fresh kiryana spices" className="h-64 rounded-xl sm:h-80" />
-                <div className="mt-3 flex items-center justify-between gap-3 px-2 pb-1">
-                    <div>
-                        <p className="text-[13.5px] font-bold text-[#17392C]">Recipe portion baskets</p>
-                        <p className="text-[11.5px] text-[#5E6B63]">Picked for your dish, sent to your chef</p>
+            <div className="overflow-hidden rounded-2xl border border-[#E9E3D3] bg-white p-3 shadow-card w-full mt-4 lg:mt-0">
+                <SafeImage src={images.spiceBowls} alt="Pantry and fresh kiryana spices" className="h-52 sm:h-72 object-cover rounded-xl" />
+                <div className="mt-3 flex items-center justify-between gap-3 px-1 sm:px-2 pb-1">
+                    <div className="text-left">
+                        <p className="text-[13px] sm:text-[13.5px] font-bold text-[#17392C]">Recipe portion baskets</p>
+                        <p className="text-[11px] sm:text-[11.5px] text-[#5E6B63]">Picked for your dish, sent to your chef</p>
                     </div>
-                    <span className="rounded-full bg-[#C2E35A] px-3 py-1 text-[11px] font-bold text-[#17392C]">Fresh</span>
+                    <span className="rounded-full bg-[#C2E35A] px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold text-[#17392C]">Fresh</span>
                 </div>
             </div>
         </Reveal>
@@ -577,54 +579,54 @@ const chefDifferenceData = [
 ]
 
 const ChefDifference = () => (
-    <section className="bg-white py-20 lg:py-24">
+    <section className="bg-white py-14 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
             <Reveal className="text-center max-w-3xl mx-auto">
                 <Pill className="bg-[#D3F0DE] text-[#17392C]">Why cook fresh at home</Pill>
-                <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[44px]">The Chef Haazir Difference</h2>
-                <p className="mt-3 text-[15px] text-[#5E6B63]">Cooked hot in your kitchen vs. soggy takeout delivery or unreliable domestic help.</p>
+                <h2 style={heading} className="mt-4 text-3xl text-[#17392C] sm:text-4xl md:text-[44px]">The Chef Haazir Difference</h2>
+                <p className="mt-3 text-[13px] sm:text-[15px] text-[#5E6B63]">Cooked hot in your kitchen vs. soggy takeout delivery or unreliable domestic help.</p>
             </Reveal>
 
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-                <Reveal delay={0.1} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
-                    <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="users" size={18} /></span>
-                    <p className="mt-3 text-2xl font-bold text-[#17392C]">15 min</p>
-                    <p className="text-[12px] text-[#5E6B63]">Chefs accept or decline your request</p>
+            <div className="mt-8 flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+                <Reveal delay={0.1} className="flex-1 w-full sm:min-w-[200px] rounded-2xl bg-[#F5F0E4] p-4 sm:p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
+                    <span className="mx-auto flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="users" size={16} /></span>
+                    <p className="mt-2 sm:mt-3 text-xl sm:text-2xl font-bold text-[#17392C]">15 min</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#5E6B63]">Chefs accept or decline your request</p>
                 </Reveal>
-                <Reveal delay={0.2} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
-                    <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="clock" size={18} /></span>
-                    <p className="mt-3 text-2xl font-bold text-[#17392C]">2 hours</p>
-                    <p className="text-[12px] text-[#5E6B63]">One fixed-price cooking slot in your kitchen</p>
+                <Reveal delay={0.2} className="flex-1 w-full sm:min-w-[200px] rounded-2xl bg-[#F5F0E4] p-4 sm:p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
+                    <span className="mx-auto flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="clock" size={16} /></span>
+                    <p className="mt-2 sm:mt-3 text-xl sm:text-2xl font-bold text-[#17392C]">2 hours</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#5E6B63]">One fixed-price cooking slot in your kitchen</p>
                 </Reveal>
-                <Reveal delay={0.3} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
-                    <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="shield" size={18} /></span>
-                    <p className="mt-3 text-2xl font-bold text-[#17392C]">Rs 0</p>
-                    <p className="text-[12px] text-[#5E6B63]">Advance payment: pay in cash after the meal</p>
+                <Reveal delay={0.3} className="flex-1 w-full sm:min-w-[200px] rounded-2xl bg-[#F5F0E4] p-4 sm:p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
+                    <span className="mx-auto flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="shield" size={16} /></span>
+                    <p className="mt-2 sm:mt-3 text-xl sm:text-2xl font-bold text-[#17392C]">Rs 0</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#5E6B63]">Advance payment: pay in cash after the meal</p>
                 </Reveal>
             </div>
 
-            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="mt-6 sm:mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {chefDifferenceData.map((col, i) => (
-                    <Reveal key={col.title} delay={i * 0.1}>
+                    <Reveal key={col.title} delay={i * 0.1} className={i === 2 ? "md:col-span-2 lg:col-span-1" : ""}>
                         <motion.div 
                             whileHover={{ y: -6 }} 
                             transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                            className="flex h-full flex-col rounded-2xl border border-[#17392C] bg-[#17392C] p-6 text-white shadow-lg"
+                            className="flex h-full flex-col rounded-2xl border border-[#17392C] bg-[#17392C] p-5 sm:p-6 text-white shadow-lg"
                         >
                             <div className="flex items-center justify-between">
-                                <h3 className="text-[14px] font-bold uppercase tracking-wider text-[#C2E35A]">{col.title}</h3>
-                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C2E35A] text-[#17392C]">
-                                    <Icon name="check" size={14} strokeWidth={2.6} />
+                                <h3 className="text-[13px] sm:text-[14px] font-bold uppercase tracking-wider text-[#C2E35A]">{col.title}</h3>
+                                <span className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-[#C2E35A] text-[#17392C]">
+                                    <Icon name="check" size={13} strokeWidth={2.6} />
                                 </span>
                             </div>
-                            <ul className="mt-4 flex-1 space-y-2 text-[12.5px] leading-relaxed text-white/85">
+                            <ul className="mt-3 sm:mt-4 flex-1 space-y-2 text-[11.5px] sm:text-[12.5px] leading-relaxed text-white/85">
                                 {col.points.map((p, idx) => (
                                     <li key={idx} className="flex gap-2">
                                         <Icon name="check" size={13} strokeWidth={2.6} className="mt-0.5 shrink-0 text-[#C2E35A]" /> {p}
                                     </li>
                                 ))}
                             </ul>
-                            <div className="mt-6 border-t border-white/10 pt-3 text-[12px] font-semibold text-[#C2E35A]">
+                            <div className="mt-5 sm:mt-6 border-t border-white/10 pt-3 text-[11px] sm:text-[12px] font-semibold text-[#C2E35A]">
                                 {col.footer}
                             </div>
                         </motion.div>
@@ -643,15 +645,15 @@ const mealPlans = [
 ]
 
 const MealPlans = () => (
-    <section className="bg-[#FAF6EE] py-20 lg:py-24">
+    <section className="bg-[#FAF6EE] py-14 lg:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-            <Reveal className="flex flex-col justify-between gap-4 md:flex-row md:items-end mb-10">
+            <Reveal className="flex flex-col justify-between gap-4 md:flex-row md:items-end mb-6 sm:mb-8">
                 <div>
                     <Pill className="bg-[#C2E35A] text-[#17392C]">Tailored Offerings</Pill>
-                    <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[42px]">Curated Meal Plans & Dawat Packages</h2>
-                    <p className="mt-2 text-[15px] text-[#5E6B63]">Whether it's your daily rotis or an elaborate 20-guest weekend dawat, we have you covered.</p>
+                    <h2 style={heading} className="mt-4 text-3xl text-[#17392C] sm:text-4xl md:text-[42px]">Curated Meal Plans & Dawat Packages</h2>
+                    <p className="mt-2 text-[13px] sm:text-[15px] text-[#5E6B63]">Whether it's your daily rotis or an elaborate 20-guest weekend dawat, we have you covered.</p>
                 </div>
-                <Link to="/chefs" className="group flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-[#17392C]">
+                <Link to="/chefs" className="group flex shrink-0 items-center gap-1.5 text-[12px] sm:text-[13px] font-semibold text-[#17392C]">
                     See all chefs <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
                 </Link>
             </Reveal>
@@ -662,15 +664,15 @@ const MealPlans = () => (
                         <motion.div 
                             whileHover={{ y: -6 }} 
                             transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                            className="flex h-full flex-col rounded-2xl bg-white p-5 shadow-sm border border-[#E9E3D3] transition-shadow hover:shadow-lg"
+                            className="flex h-full flex-col rounded-2xl bg-white p-4 sm:p-5 shadow-sm border border-[#E9E3D3] transition-shadow hover:shadow-lg"
                         >
-                            <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${plan.col} text-[#17392C]`}><Icon name={plan.icon} size={18} /></span>
-                            <p className="mt-4 text-[10px] font-bold uppercase tracking-wider text-[#8A9189]">{plan.tag}</p>
-                            <h3 style={heading} className="mt-1 text-[17px] text-[#17392C]">{plan.title}</h3>
-                            <p className="mt-2 text-[12.5px] leading-relaxed text-[#5E6B63] flex-1">{plan.desc}</p>
-                            <div className="mt-5 border-t border-[#EFE9DA] pt-4 flex items-center justify-between">
-                                <p className="text-[12px] font-semibold text-[#5E6B63]">Fixed price per 2-hr slot</p>
-                                <Link to={plan.cuisine ? `/chefs?cuisine=${encodeURIComponent(plan.cuisine)}` : '/chefs'} className="rounded-full bg-[#17392C] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">Find chefs</Link>
+                            <span className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl ${plan.col} text-[#17392C]`}><Icon name={plan.icon} size={17} /></span>
+                            <p className="mt-3 sm:mt-4 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#8A9189]">{plan.tag}</p>
+                            <h3 style={heading} className="mt-1 text-[16px] sm:text-[17px] text-[#17392C]">{plan.title}</h3>
+                            <p className="mt-2 text-[12px] sm:text-[12.5px] leading-relaxed text-[#5E6B63] flex-1">{plan.desc}</p>
+                            <div className="mt-4 sm:mt-5 border-t border-[#EFE9DA] pt-3 sm:pt-4 flex items-center justify-between">
+                                <p className="text-[11px] sm:text-[12px] font-semibold text-[#5E6B63]">Fixed price per 2-hr slot</p>
+                                <Link to={plan.cuisine ? `/chefs?cuisine=${encodeURIComponent(plan.cuisine)}` : '/chefs'} className="rounded-full bg-[#17392C] px-3.5 py-1.5 text-[10.5px] sm:text-[11px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">Find chefs</Link>
                             </div>
                         </motion.div>
                     </Reveal>
@@ -688,24 +690,24 @@ const purityPillars = [
 ]
 
 const PurityPromise = () => (
-    <section className="bg-white py-20 lg:py-24 border-t border-[#F5F0E4]">
+    <section className="bg-white py-14 lg:py-24 border-t border-[#F5F0E4]">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
             <Reveal className="text-center max-w-3xl mx-auto">
                 <Pill className="bg-[#D3F0DE] text-[#17392C]">Our promise</Pill>
-                <h2 style={heading} className="mt-4 text-4xl text-[#17392C] md:text-[44px]">Four promises on every booking</h2>
-                <p className="mt-3 text-[15px] text-[#5E6B63]">Your home, safety, and health are sacred. Here is how we protect every meal.</p>
+                <h2 style={heading} className="mt-4 text-3xl text-[#17392C] sm:text-4xl md:text-[44px]">Four promises on every booking</h2>
+                <p className="mt-3 text-[13px] sm:text-[15px] text-[#5E6B63]">Your home, safety, and health are sacred. Here is how we protect every meal.</p>
             </Reveal>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {purityPillars.map((p, i) => (
                     <Reveal key={p.num} delay={i * 0.08}>
                         <motion.div 
                             whileHover={{ y: -4 }} 
-                            className="rounded-2xl bg-[#FAF6EE] p-5 transition-shadow hover:shadow-sm"
+                            className="rounded-2xl bg-[#FAF6EE] p-4 sm:p-5 transition-shadow hover:shadow-sm h-full"
                         >
-                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[12px] font-bold text-[#17392C]">{p.num}</span>
-                            <h3 style={heading} className="mt-4 text-[16px] text-[#17392C]">{p.title}</h3>
-                            <p className="mt-2 text-[12.5px] leading-relaxed text-[#5E6B63]">{p.desc}</p>
+                            <span className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white text-[11px] sm:text-[12px] font-bold text-[#17392C]">{p.num}</span>
+                            <h3 style={heading} className="mt-3 sm:mt-4 text-[15px] sm:text-[16px] text-[#17392C]">{p.title}</h3>
+                            <p className="mt-2 text-[12px] sm:text-[12.5px] leading-relaxed text-[#5E6B63]">{p.desc}</p>
                         </motion.div>
                     </Reveal>
                 ))}
@@ -720,18 +722,18 @@ const ClosingCta = () => {
     const canBecomeChef = !user || user.role === 'user'
 
     return (
-        <section className="bg-white px-4 pb-20 pt-10 md:px-8 lg:pb-24">
-            <Reveal className="relative mx-auto max-w-7xl overflow-hidden rounded-[28px] bg-[radial-gradient(ellipse_at_85%_85%,#2E5A45_0%,#17392C_55%,#102B21_100%)] px-6 py-16 text-center text-white sm:px-12 lg:py-20">
-                <h2 style={heading} className="mx-auto max-w-2xl text-[34px] text-white md:text-[46px]">Ready to taste real home cooking?</h2>
-                <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/80">
+        <section className="bg-white px-4 pb-14 pt-6 md:px-8 lg:pb-24 lg:pt-10">
+            <Reveal className="relative mx-auto max-w-7xl overflow-hidden rounded-[28px] bg-[radial-gradient(ellipse_at_85%_85%,#2E5A45_0%,#17392C_55%,#102B21_100%)] px-6 py-12 sm:py-16 text-center text-white sm:px-12 lg:py-20">
+                <h2 style={heading} className="mx-auto max-w-2xl text-2xl sm:text-3xl text-white md:text-[46px]">Ready to taste real home cooking?</h2>
+                <p className="mx-auto mt-3 sm:mt-4 max-w-xl text-[13px] sm:text-[15px] leading-relaxed text-white/80">
                     Book your favourite neighborhood chef in a few taps. Pick a slot, add groceries if you like, and pay in cash after the meal.
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                    <Link to="/chefs" className="group inline-flex items-center gap-2 rounded-full bg-[#C2E35A] px-7 py-3.5 text-[14px] font-semibold text-[#17392C] transition hover:bg-[#B3D94A] hover:scale-105 active:scale-95">
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Link to="/chefs" className="group inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full bg-[#C2E35A] px-6 sm:px-7 py-3.5 text-[13px] sm:text-[14px] font-semibold text-[#17392C] transition hover:bg-[#B3D94A] hover:scale-105 active:scale-95">
                         Find a chef <Icon name="arrowRight" size={16} className="transition group-hover:translate-x-1" />
                     </Link>
                     {canBecomeChef && (
-                        <Link to="/signup?role=chef" className="inline-flex items-center rounded-full bg-white/90 px-7 py-3.5 text-[14px] font-semibold text-[#17392C] transition hover:bg-white hover:scale-105 active:scale-95">
+                        <Link to="/signup?role=chef" className="inline-flex w-full sm:w-auto justify-center items-center rounded-full bg-white/90 px-6 sm:px-7 py-3.5 text-[13px] sm:text-[14px] font-semibold text-[#17392C] transition hover:bg-white hover:scale-105 active:scale-95">
                             Become a chef
                         </Link>
                     )}
