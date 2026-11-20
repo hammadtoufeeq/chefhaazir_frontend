@@ -10,6 +10,7 @@ import { FREE_DELIVERY_FROM, DELIVERY_FEE } from '../constants/grocery'
 import { useAuth } from '../context/AuthContext'
 import Icon from '../components/Icon'
 import Reveal from '../components/Reveal'
+import GreenHero, { Accent } from '../components/GreenHero'
 
 const subjects = [
     'Help with a booking',
@@ -310,40 +311,33 @@ const Contact = ({ portal = false }) => {
     )
 
     return (
-        <div className="pb-20 pt-10">
-            <div className="mx-auto max-w-7xl px-4 md:px-8">
-                <header className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
-                    <div>
-                        <p className="eyebrow">Rabta & concierge</p>
-                        <h1 className="mt-3 font-serif text-[46px] leading-none tracking-tight sm:text-[64px]">Baat karein<span className="text-rust">.</span></h1>
-                        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted">We usually reply within a day. Whether you are planning a dawat, need help with a booking, or want to cook with us as a chef, our door is open.</p>
-                        <div className="mt-6 flex flex-wrap gap-2">
-                            {['Booking help', 'Dawat & events', 'Chef partners', 'Grocery stores'].map((t) => (
-                                <span key={t} className="rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-ink/75">{t}</span>
+        <div className="pb-20">
+            <GreenHero
+                pill="We usually reply within a day"
+                pulse
+                title={<>Baat <Accent>karein.</Accent></>}
+                text="Planning a dawat, need help with a booking, or want to cook with us as a chef? Write to us and a real person from the Chef Haazir team will reply."
+                chips={[['calendar', 'Booking help'], ['users', 'Dawat & events'], ['chef', 'Chef partners'], ['store', 'Grocery stores']]}
+                photo={{ src: images.foodTable, alt: 'Plates of home cooked food on a table' }}
+                card={
+                    <>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A9189]">Quick answers</p>
+                        <ul className="mt-2 space-y-1">
+                            {[['/my-bookings', 'calendar', 'Booking status or cancel'], ['/signup?role=chef', 'chef', 'Sign up as a chef'], ['/grocery', 'basket', 'Grocery prices by city']].map(([to, icon, label]) => (
+                                <li key={to}>
+                                    <Link to={to} className="group flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-[12px] font-semibold hover:bg-[#F5F0E4]">
+                                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#C2E35A]"><Icon name={icon} size={12} /></span>
+                                        <span className="flex-1">{label}</span>
+                                        <Icon name="arrowRight" size={13} className="text-[#8A9189] transition group-hover:translate-x-0.5" />
+                                    </Link>
+                                </li>
                             ))}
-                        </div>
-                    </div>
-
-                    {/* Photo collage */}
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto w-full max-w-lg pb-10 pl-10 sm:pl-16">
-                        <div className="rotate-2 rounded-2xl bg-white p-2.5 shadow-lift ring-1 ring-line">
-                            <SafeImage src={images.foodTable} alt="Plates of home cooked food on a table" eager className="aspect-[4/3] rounded-xl" />
-                        </div>
-                        <div className="absolute bottom-0 left-0 w-[46%] -rotate-3 rounded-xl bg-white p-2 shadow-lift ring-1 ring-line">
-                            <SafeImage src={images.rotiOnTawa} alt="Fresh roti being made on a tawa" eager className="aspect-square rounded-lg" />
-                        </div>
-                        <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
-                            className="absolute -top-3 right-4 flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-[12px] font-bold shadow-lift ring-1 ring-line">
-                            <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage opacity-60" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sage" /></span>
-                            We reply within a day
-                        </motion.span>
-                        <span className="absolute bottom-6 right-2 flex items-center gap-2 rounded-xl bg-sage-dark px-3.5 py-2.5 text-[12px] font-semibold text-white shadow-lift">
-                            <Icon name="mail" size={15} /> Every message read by our team
-                        </span>
-                    </motion.div>
-                </header>
-
-                <div className="mt-10 grid gap-6 lg:grid-cols-[1.45fr_1fr] lg:items-start">
+                        </ul>
+                    </>
+                }
+            />
+            <div className="mx-auto max-w-7xl px-4 pt-10 md:px-8">
+                <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr] lg:items-start">
                     <div className="space-y-5">
                         <ContactForm onSent={setSentTo} />
                         <AnimatePresence>{sentTo !== null && <SentCard name={sentTo} onAgain={() => setSentTo(null)} />}</AnimatePresence>

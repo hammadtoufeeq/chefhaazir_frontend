@@ -10,6 +10,7 @@ import { todayInPakistan, addDays, dateParts, SLOTS } from '../lib/time'
 import Icon from '../components/Icon'
 import SafeImage from '../components/SafeImage'
 import Pagination from '../components/Pagination'
+import GreenHero, { Accent, HeroSteps } from '../components/GreenHero'
 
 // ---------------------------------------------------------------------------
 // Find Chefs. Same palette as Home, used simply:
@@ -278,48 +279,16 @@ const Chefs = () => {
     return (
         <div className="bg-[#FAF6EE]">
             {/* ===== Hero: one colour, forest green ===== */}
-            <section className="relative overflow-hidden bg-[#17392C] text-white">
-                <svg aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 h-[620px] w-[620px] text-white" viewBox="0 0 600 600" fill="none">
-                    {[110, 180, 250, 300].map((r) => <circle key={r} cx="300" cy="300" r={r} stroke="currentColor" strokeOpacity="0.06" strokeWidth="1.5" />)}
-                </svg>
-                <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-10 md:px-8 lg:pb-14 lg:pt-14">
-                    <div className="grid items-center gap-10 lg:grid-cols-[1.25fr_1fr]">
-                        <div>
-                            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/90">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#C2E35A]" />
-                                {facets.isLoading ? 'Finding verified chefs…' : `${facets.data?.totalChefs ?? 0} verified home ${facets.data?.totalChefs === 1 ? 'chef' : 'chefs'} in ${place}`}
-                            </span>
-                            <h1 style={heading} className="mt-4 text-[36px] text-white sm:text-[46px] lg:text-[52px]">
-                                Find a home chef in <span className="text-[#C2E35A]">{place}</span>
-                            </h1>
-                            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/75">
-                                Every chef here is phone-verified and approved by our team. Pick a free 2-hour slot, add groceries if you like, and pay in cash after the meal.
-                            </p>
-                            <ul className="mt-6 flex flex-wrap gap-2">
-                                {[['shield', 'Phone verified & admin approved'], ['basket', 'Groceries from our city store'], ['wallet', 'Pay in cash after the meal']].map(([icon, text]) => (
-                                    <li key={text} className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[11.5px] font-medium text-white/85"><Icon name={icon} size={13} className="text-[#C2E35A]" /> {text}</li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="relative hidden lg:block">
-                            <div className="overflow-hidden rounded-[24px] border-[6px] border-white/10">
-                                <SafeImage src={images.heroKarahi} alt="Chicken karahi cooking at home" eager className="h-72" />
-                            </div>
-                            <div className="absolute -bottom-5 -left-6 rounded-2xl bg-white p-4 text-[#17392C] shadow-lift">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A9189]">How booking works</p>
-                                <ol className="mt-2 space-y-1.5 text-[12px] font-semibold">
-                                    {['Pick a chef and a slot', 'Chef replies within 15 minutes', 'Pay after the meal'].map((t, i) => (
-                                        <li key={t} className="flex items-center gap-2"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C2E35A] text-[10px] font-bold">{i + 1}</span>{t}</li>
-                                    ))}
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="mt-10 lg:mt-12">
-                        <HeroSearch filters={filters} onApply={(next) => apply(next)} today={today} dates={dates} />
-                    </div>
-                </div>
-            </section>
+            <GreenHero
+                pill={facets.isLoading ? 'Finding verified chefs…' : `${facets.data?.totalChefs ?? 0} verified home ${facets.data?.totalChefs === 1 ? 'chef' : 'chefs'} in ${place}`}
+                title={<>Find a home chef in <Accent>{place}</Accent></>}
+                text="Every chef here is phone-verified and approved by our team. Pick a free 2-hour slot, add groceries if you like, and pay in cash after the meal."
+                chips={[['shield', 'Phone verified & admin approved'], ['basket', 'Groceries from our city store'], ['wallet', 'Pay in cash after the meal']]}
+                photo={{ src: images.heroKarahi, alt: 'Chicken karahi cooking at home' }}
+                card={<HeroSteps title="How booking works" steps={['Pick a chef and a slot', 'Chef replies within 15 minutes', 'Pay after the meal']} />}
+            >
+                <HeroSearch filters={filters} onApply={(next) => apply(next)} today={today} dates={dates} />
+            </GreenHero>
 
             {/* ===== Main body: one colour, cream ===== */}
             <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:px-8">

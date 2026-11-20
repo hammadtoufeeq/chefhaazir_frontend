@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
 import api from '../lib/api'
 import cities from '../constants/cities'
 import { images } from '../constants/images'
@@ -8,6 +7,7 @@ import { FREE_DELIVERY_FROM, DELIVERY_FEE } from '../constants/grocery'
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import Reveal from '../components/Reveal'
+import GreenHero, { Accent, heroHeading } from '../components/GreenHero'
 
 // Live counts from the public API (no made-up numbers)
 const useStats = () => {
@@ -22,45 +22,30 @@ const useStats = () => {
     return { chefs: chefs.data, stores: stores.data?.length }
 }
 
-const Stat = ({ value, label }) => (
-    <div>
-        <p className="font-serif text-[30px] font-semibold leading-none text-rust">{value ?? '–'}</p>
-        <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">{label}</p>
-    </div>
-)
-
 const Hero = () => {
     const { chefs, stores } = useStats()
+    const numbers = [[chefs, 'Verified chefs'], [stores, 'City stores'], [cities.length, 'Cities']]
     return (
-        <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-20 pt-10 md:px-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:pt-14">
-            <div>
-                <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/70"><span className="h-1.5 w-1.5 rounded-full bg-rust" /> The Haazir manifesto</p>
-                <motion.h1 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mt-4 font-serif text-[42px] leading-[1.05] tracking-tight sm:text-[54px]">
-                    Every city has someone who <span className="italic text-rust">misses home food.</span>
-                </motion.h1>
-                <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-muted">
-                    In hostels, shared flats and long office days across Lahore, Karachi and Islamabad, students and working bachelors miss the comfort of <em className="text-ink">ammi ke haath ka khana</em>. Not restaurant oil. Not another delivery bag. Just honest, warm food, cooked at home with care.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-x-10 gap-y-5">
-                    <Stat value={chefs} label="Verified home chefs" />
-                    <Stat value={stores} label="City grocery stores" />
-                    <Stat value={cities.length} label="Cities served" />
-                </div>
-            </div>
-            <motion.figure initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.8 }} className="lg:pl-6">
-                <div className="relative rounded-2xl bg-white p-2.5 shadow-lift ring-1 ring-line">
-                    <SafeImage src={images.rotiThali} alt="Roti, daal and salan on a steel plate" eager className="aspect-[5/4] rounded-xl" imgClassName="" />
-                    <div className="absolute inset-x-6 bottom-6 flex items-end justify-between gap-2 text-[11px] font-semibold text-white">
-                        <span className="rounded-md bg-ink/70 px-2.5 py-1.5 backdrop-blur-sm">Lunch slot · 12 – 2 PM</span>
-                        <span className="flex items-center gap-1.5 rounded-md bg-white/95 px-2.5 py-1.5 text-ink"><span className="h-1.5 w-1.5 rounded-full bg-rust" /> Daal, roti & salan</span>
+        <GreenHero
+            pill="The Haazir manifesto"
+            title={<>Every city has someone who misses <Accent>home food.</Accent></>}
+            text={<>In hostels, shared flats and long office days, students and working bachelors miss <em className="text-white">ammi ke haath ka khana</em>. Not restaurant oil, not another delivery bag. Just honest, warm food cooked in your own kitchen by a verified home chef.</>}
+            chips={[['chef', 'Home chefs, not restaurants'], ['tag', 'One fixed price per 2-hour slot'], ['heart', 'Fair pay for every chef']]}
+            photo={{ src: images.rotiThali, alt: 'Roti, daal and salan on a steel plate' }}
+            card={
+                <>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A9189]">Chef Haazir today</p>
+                    <div className="mt-2 grid grid-cols-3 gap-4">
+                        {numbers.map(([value, label]) => (
+                            <div key={label}>
+                                <p style={heroHeading} className="text-[24px] text-[#17392C]">{value ?? '–'}</p>
+                                <p className="text-[10.5px] font-semibold text-[#5E6B63]">{label}</p>
+                            </div>
+                        ))}
                     </div>
-                </div>
-                <figcaption className="mt-3 flex items-center justify-between gap-3 px-1 text-[12px] text-muted">
-                    <span className="font-serif italic">“Ghar ka khana, cooked in your own kitchen.”</span>
-                    <span className="shrink-0 font-semibold">7 slots daily</span>
-                </figcaption>
-            </motion.figure>
-        </section>
+                </>
+            }
+        />
     )
 }
 

@@ -8,15 +8,9 @@ import { useCity } from '../context/CityContext'
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import Reveal from '../components/Reveal'
-import DeliveryBar from '../components/DeliveryBar'
+import GreenHero, { Accent, HeroSteps } from '../components/GreenHero'
 
 const storeLink = (city) => `/grocery/${encodeURIComponent(city)}`
-
-const badges = [
-    { icon: 'checkCircle', text: 'One trusted store per city' },
-    { icon: 'lock', text: 'Prices locked at booking' },
-    { icon: 'truck', text: 'Delivered to your chef' }
-]
 
 // Big card for the store in the visitor's city (or the first store)
 const FlagshipCard = ({ store, isHome }) => (
@@ -114,41 +108,30 @@ const Grocery = () => {
 
     return (
         <>
-            <DeliveryBar />
-            <div className="mx-auto max-w-7xl px-4 pb-20 pt-10 md:px-8">
-                {/* Header */}
-                <header className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-                    <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-rust">Chef Haazir kiryana <span className="font-medium normal-case tracking-normal text-muted">· run by the platform in every city</span></p>
-                        <h1 className="mt-3 font-serif text-[40px] leading-tight tracking-tight sm:text-5xl">Chef Haazir Grocery</h1>
-                        <p className="mt-2 max-w-lg text-[15px] text-muted">Fresh groceries from our own store in your city, delivered straight to your chef’s kitchen.</p>
-                    </div>
-                    <ul className="flex max-w-md flex-wrap gap-2 lg:justify-end">
-                        {badges.map((b) => (
-                            <li key={b.text} className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-[11px] font-semibold text-ink/80">
-                                <Icon name={b.icon} size={13} className="text-rust" /> {b.text}
-                            </li>
+            <GreenHero
+                pill={isLoading ? 'Loading city stores…' : `${stores.length} city ${stores.length === 1 ? 'store' : 'stores'} open`}
+                title={<>Groceries that arrive <Accent>with your chef</Accent></>}
+                text="Our own store in your city packs your order once the chef accepts the booking, and delivers it to the chef’s home before your slot. The chef brings everything to your kitchen."
+                chips={[['truck', `Free delivery from Rs ${FREE_DELIVERY_FROM}`], ['lock', 'Prices locked at booking'], ['store', 'One trusted store per city']]}
+                photo={{ src: images.groceryShelves, alt: 'Shelves of fresh vegetables in a grocery store' }}
+                card={<HeroSteps title="How grocery works" steps={['Add items when you book a chef', 'Store packs once the chef accepts', 'Delivered to your chef before the slot']} />}
+            >
+                <div className="flex flex-col gap-3 rounded-2xl bg-white p-3 text-[#17392C] shadow-lift sm:flex-row sm:items-center">
+                    <p className="flex shrink-0 items-center gap-2 px-2 text-[13px] font-bold"><Icon name="pin" size={16} className="text-[#5E8A2E]" /> Open your city store</p>
+                    <div className="flex flex-1 flex-wrap gap-2">
+                        {isLoading && [0, 1, 2].map((i) => <span key={i} className="h-10 w-28 animate-pulse rounded-xl bg-[#F5F0E4]" />)}
+                        {stores.map((s) => (
+                            <Link key={s._id} to={storeLink(s.city)} className={`group flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition ${s.city === city ? 'bg-[#17392C] text-white' : 'bg-[#FAF6EE] hover:bg-[#F5F0E4]'}`}>
+                                {s.city} <Icon name="arrowRight" size={14} className={`transition group-hover:translate-x-0.5 ${s.city === city ? 'text-[#C2E35A]' : 'text-[#8A9189]'}`} />
+                            </Link>
                         ))}
-                    </ul>
-                </header>
-
-                {/* Banner */}
-                <Reveal className="relative mt-8 overflow-hidden rounded-2xl shadow-lift">
-                    <SafeImage src={images.groceryShelves} alt="Shelves of fresh vegetables in a grocery store" eager className="h-72 sm:h-96 lg:h-[420px]" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
-                        <div className="max-w-md text-white">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">From our store to your dastarkhwan</p>
-                            <p className="mt-2 font-serif text-[24px] leading-snug sm:text-[28px]">Everything your chef needs, from chakki atta to desi ghee.</p>
-                        </div>
-                        <span className="flex w-fit items-center gap-2 rounded-lg bg-white/95 px-3.5 py-2 text-[12px] font-bold text-ink shadow-card">
-                            <Icon name="truck" size={15} className="text-sage" /> Delivered before your slot
-                        </span>
+                        {!isLoading && !stores.length && <span className="px-2 py-2.5 text-[12.5px] text-[#8A9189]">Our first city stores are opening soon.</span>}
                     </div>
-                </Reveal>
-
+                </div>
+            </GreenHero>
+            <div className="mx-auto max-w-7xl px-4 pb-20 pt-4 md:px-8">
                 {/* Stores */}
-                <section className="mt-16">
+                <section className="mt-12">
                     <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
                         <div>
                             <h2 className="font-serif text-[32px] tracking-tight">Select your city store</h2>
