@@ -306,7 +306,7 @@ const PhoneMock = () => {
 
             <motion.div {...bob(5.5, 0.8)} className="absolute -bottom-6 -right-2 rounded-2xl bg-[#C2E35A] px-4 py-3 shadow-card sm:-right-8">
                 <p className="flex items-center gap-1.5 text-[10px] font-semibold text-[#17392C]/70"><Icon name="basket" size={12} /> Groceries</p>
-                <p className="mt-0.5 text-[15px] font-bold leading-none text-[#17392C]">Free over Rs 500</p>
+                <p className="mt-0.5 text-[15px] font-bold leading-none text-[#17392C]">Free Delivery over Rs 500</p>
             </motion.div>
         </div>
     )
@@ -397,14 +397,14 @@ const HowItWorks = () => (
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {steps.map((s, i) => (
                     <Reveal key={s.title} delay={i * 0.08}>
-                        <article className="flex h-full min-h-[260px] flex-col rounded-2xl bg-[#F8F4EB] p-6 transition hover:-translate-y-1 hover:shadow-card">
+                        <motion.article whileHover={{ y: -6 }} className="flex h-full min-h-[260px] flex-col rounded-2xl bg-[#F8F4EB] p-6 transition-shadow hover:shadow-lg">
                             <span className={`flex h-10 w-10 items-center justify-center rounded-xl text-[13px] font-bold ${s.badge}`}>0{i + 1}</span>
                             <h3 style={heading} className="mt-6 text-[19px] text-[#17392C]">{s.title}</h3>
                             <p className="mt-3 text-[13.5px] leading-relaxed text-[#5E6B63]">{s.text}</p>
                             <p className="mt-auto flex items-center justify-between pt-6 text-[11.5px] font-semibold text-[#17392C]">
                                 {s.foot} <Icon name="check" size={14} strokeWidth={2.4} className="text-[#5E8A2E]" />
                             </p>
-                        </article>
+                        </motion.article>
                     </Reveal>
                 ))}
             </div>
@@ -414,7 +414,7 @@ const HowItWorks = () => (
 
 // ---------------- Master chefs ----------------
 const MasterChefCard = ({ chef }) => (
-    <motion.article whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} className="flex h-full flex-col rounded-2xl border border-[#E9E3D3] bg-white p-3 shadow-card">
+    <motion.article whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} className="flex h-full flex-col rounded-2xl border border-[#E9E3D3] bg-white p-3 shadow-sm hover:shadow-xl">
         <div className="relative">
             <SafeImage src={chefPhoto(chef)} alt={`${chef.cuisines[0] || 'Home'} food`} className="h-44 rounded-xl" />
             <span className="absolute left-3 top-3 rounded-full bg-[#C2E35A] px-2.5 py-1 text-[11px] font-bold text-[#17392C]">{chef.cuisines[0] || 'Home cooking'}</span>
@@ -435,7 +435,7 @@ const MasterChefCard = ({ chef }) => (
                     <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A9189]">Cooking slot</p>
                     <p className="text-[18px] font-bold text-[#17392C]">Rs {chef.ratePerSlot.toLocaleString()} <span className="text-[11px] font-medium text-[#8A9189]">/ 2-hr slot</span></p>
                 </div>
-                <Link to={`/chefs/${chef.id}`} className="rounded-full bg-[#17392C] px-5 py-2.5 text-[12.5px] font-semibold text-white transition hover:bg-[#0F2A20]">Book chef</Link>
+                <Link to={`/chefs/${chef.id}`} className="rounded-full bg-[#17392C] px-5 py-2.5 text-[12.5px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">Book chef</Link>
             </div>
         </div>
     </motion.article>
@@ -528,13 +528,13 @@ const Groceries = () => (
                 </p>
                 <div className="mt-6 grid max-w-lg gap-3 sm:grid-cols-2">
                     {groceryFacts.map((f) => (
-                        <div key={f.title} className="rounded-xl bg-white p-4">
+                        <div key={f.title} className="rounded-xl bg-white p-4 transition hover:shadow-sm">
                             <p className="text-[14px] font-bold text-[#17392C]">{f.title}</p>
                             <p className="mt-1 text-[12px] text-[#5E6B63]">{f.text}</p>
                         </div>
                     ))}
                 </div>
-                <Link to="/grocery" className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#17392C] px-6 py-3.5 text-[13.5px] font-semibold text-white transition hover:bg-[#0F2A20]">
+                <Link to="/grocery" className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#17392C] px-6 py-3.5 text-[13.5px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">
                     Explore kiryana pantry <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
                 </Link>
             </div>
@@ -586,17 +586,17 @@ const ChefDifference = () => (
             </Reveal>
 
             <div className="mt-10 flex flex-wrap justify-center gap-4">
-                <Reveal delay={0.1} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center">
+                <Reveal delay={0.1} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
                     <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="users" size={18} /></span>
                     <p className="mt-3 text-2xl font-bold text-[#17392C]">15 min</p>
                     <p className="text-[12px] text-[#5E6B63]">Chefs accept or decline your request</p>
                 </Reveal>
-                <Reveal delay={0.2} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center">
+                <Reveal delay={0.2} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
                     <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="clock" size={18} /></span>
                     <p className="mt-3 text-2xl font-bold text-[#17392C]">2 hours</p>
                     <p className="text-[12px] text-[#5E6B63]">One fixed-price cooking slot in your kitchen</p>
                 </Reveal>
-                <Reveal delay={0.3} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center">
+                <Reveal delay={0.3} className="flex-1 min-w-[200px] rounded-2xl bg-[#F5F0E4] p-5 text-center transition hover:-translate-y-1 hover:shadow-sm">
                     <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#17392C]"><Icon name="shield" size={18} /></span>
                     <p className="mt-3 text-2xl font-bold text-[#17392C]">Rs 0</p>
                     <p className="text-[12px] text-[#5E6B63]">Advance payment: pay in cash after the meal</p>
@@ -605,21 +605,29 @@ const ChefDifference = () => (
 
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
                 {chefDifferenceData.map((col, i) => (
-                    <Reveal key={col.title} delay={i * 0.1} className={`flex flex-col rounded-2xl border p-6 ${col.isBad ? 'border-[#E9E3D3] bg-[#FAF6EE] text-[#17392C]' : 'border-[#17392C] bg-[#17392C] text-white shadow-lift'}`}>
-                        <div className="flex items-center justify-between">
-                            <h3 className={`text-[14px] font-bold uppercase tracking-wider ${col.isBad ? 'text-[#8A9189]' : 'text-[#C2E35A]'}`}>{col.title}</h3>
-                            <span className={`flex h-7 w-7 items-center justify-center rounded-full ${col.isBad ? 'bg-[#F5F0E4] text-[#8A9189]' : 'bg-[#C2E35A] text-[#17392C]'}`}><Icon name={col.isBad ? 'close' : 'check'} size={14} strokeWidth={2.6} /></span>
-                        </div>
-                        <ul className={`mt-4 flex-1 space-y-2 text-[12.5px] leading-relaxed ${col.isBad ? 'text-[#5E6B63]' : 'text-white/85'}`}>
-                            {col.points.map((p, idx) => (
-                                <li key={idx} className="flex gap-2">
-                                    <Icon name={col.isBad ? 'close' : 'check'} size={13} strokeWidth={2.6} className={`mt-0.5 shrink-0 ${col.isBad ? 'text-[#B4441C]/70' : 'text-[#C2E35A]'}`} /> {p}
-                                </li>
-                            ))}
-                        </ul>
-                        <div className={`mt-6 border-t pt-3 text-[12px] font-semibold ${col.isBad ? 'border-[#E9E3D3] text-[#8A9189]' : 'border-white/10 text-[#C2E35A]'}`}>
-                            {col.footer}
-                        </div>
+                    <Reveal key={col.title} delay={i * 0.1}>
+                        <motion.div 
+                            whileHover={{ y: -6 }} 
+                            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                            className="flex h-full flex-col rounded-2xl border border-[#17392C] bg-[#17392C] p-6 text-white shadow-lg"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[14px] font-bold uppercase tracking-wider text-[#C2E35A]">{col.title}</h3>
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C2E35A] text-[#17392C]">
+                                    <Icon name="check" size={14} strokeWidth={2.6} />
+                                </span>
+                            </div>
+                            <ul className="mt-4 flex-1 space-y-2 text-[12.5px] leading-relaxed text-white/85">
+                                {col.points.map((p, idx) => (
+                                    <li key={idx} className="flex gap-2">
+                                        <Icon name="check" size={13} strokeWidth={2.6} className="mt-0.5 shrink-0 text-[#C2E35A]" /> {p}
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="mt-6 border-t border-white/10 pt-3 text-[12px] font-semibold text-[#C2E35A]">
+                                {col.footer}
+                            </div>
+                        </motion.div>
                     </Reveal>
                 ))}
             </div>
@@ -651,16 +659,20 @@ const MealPlans = () => (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {mealPlans.map((plan, i) => (
                     <Reveal key={plan.title} delay={i * 0.08}>
-                        <div className="flex h-full flex-col rounded-2xl bg-white p-5 shadow-sm border border-[#E9E3D3] transition hover:shadow-md hover:-translate-y-1">
+                        <motion.div 
+                            whileHover={{ y: -6 }} 
+                            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                            className="flex h-full flex-col rounded-2xl bg-white p-5 shadow-sm border border-[#E9E3D3] transition-shadow hover:shadow-lg"
+                        >
                             <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${plan.col} text-[#17392C]`}><Icon name={plan.icon} size={18} /></span>
                             <p className="mt-4 text-[10px] font-bold uppercase tracking-wider text-[#8A9189]">{plan.tag}</p>
                             <h3 style={heading} className="mt-1 text-[17px] text-[#17392C]">{plan.title}</h3>
                             <p className="mt-2 text-[12.5px] leading-relaxed text-[#5E6B63] flex-1">{plan.desc}</p>
                             <div className="mt-5 border-t border-[#EFE9DA] pt-4 flex items-center justify-between">
                                 <p className="text-[12px] font-semibold text-[#5E6B63]">Fixed price per 2-hr slot</p>
-                                <Link to={plan.cuisine ? `/chefs?cuisine=${encodeURIComponent(plan.cuisine)}` : '/chefs'} className="rounded-full bg-[#17392C] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0F2A20]">Find chefs</Link>
+                                <Link to={plan.cuisine ? `/chefs?cuisine=${encodeURIComponent(plan.cuisine)}` : '/chefs'} className="rounded-full bg-[#17392C] px-4 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0F2A20] hover:scale-105 active:scale-95">Find chefs</Link>
                             </div>
-                        </div>
+                        </motion.div>
                     </Reveal>
                 ))}
             </div>
@@ -686,10 +698,15 @@ const PurityPromise = () => (
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {purityPillars.map((p, i) => (
-                    <Reveal key={p.num} delay={i * 0.08} className="rounded-2xl bg-[#FAF6EE] p-5 transition hover:-translate-y-1 hover:shadow-sm">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[12px] font-bold text-[#17392C]">{p.num}</span>
-                        <h3 style={heading} className="mt-4 text-[16px] text-[#17392C]">{p.title}</h3>
-                        <p className="mt-2 text-[12.5px] leading-relaxed text-[#5E6B63]">{p.desc}</p>
+                    <Reveal key={p.num} delay={i * 0.08}>
+                        <motion.div 
+                            whileHover={{ y: -4 }} 
+                            className="rounded-2xl bg-[#FAF6EE] p-5 transition-shadow hover:shadow-sm"
+                        >
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[12px] font-bold text-[#17392C]">{p.num}</span>
+                            <h3 style={heading} className="mt-4 text-[16px] text-[#17392C]">{p.title}</h3>
+                            <p className="mt-2 text-[12.5px] leading-relaxed text-[#5E6B63]">{p.desc}</p>
+                        </motion.div>
                     </Reveal>
                 ))}
             </div>
@@ -710,11 +727,11 @@ const ClosingCta = () => {
                     Book your favourite neighborhood chef in a few taps. Pick a slot, add groceries if you like, and pay in cash after the meal.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                    <Link to="/chefs" className="group inline-flex items-center gap-2 rounded-full bg-[#C2E35A] px-7 py-3.5 text-[14px] font-semibold text-[#17392C] transition hover:bg-[#B3D94A]">
+                    <Link to="/chefs" className="group inline-flex items-center gap-2 rounded-full bg-[#C2E35A] px-7 py-3.5 text-[14px] font-semibold text-[#17392C] transition hover:bg-[#B3D94A] hover:scale-105 active:scale-95">
                         Find a chef <Icon name="arrowRight" size={16} className="transition group-hover:translate-x-1" />
                     </Link>
                     {canBecomeChef && (
-                        <Link to="/signup?role=chef" className="inline-flex items-center rounded-full bg-white/90 px-7 py-3.5 text-[14px] font-semibold text-[#17392C] transition hover:bg-white">
+                        <Link to="/signup?role=chef" className="inline-flex items-center rounded-full bg-white/90 px-7 py-3.5 text-[14px] font-semibold text-[#17392C] transition hover:bg-white hover:scale-105 active:scale-95">
                             Become a chef
                         </Link>
                     )}
