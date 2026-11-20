@@ -10,7 +10,7 @@ import { todayInPakistan, addDays, dateParts, SLOTS } from '../lib/time'
 import Icon from '../components/Icon'
 import SafeImage from '../components/SafeImage'
 import Pagination from '../components/Pagination'
-import GreenHero, { Accent, HeroSteps } from '../components/GreenHero'
+import GreenHero, { Accent } from '../components/GreenHero'
 
 // ---------------------------------------------------------------------------
 // Find Chefs. Same palette as Home, used simply:
@@ -280,12 +280,16 @@ const Chefs = () => {
         <div className="bg-[#FAF6EE]">
             {/* ===== Hero: one colour, forest green ===== */}
             <GreenHero
-                pill={facets.isLoading ? 'Finding verified chefs…' : `${facets.data?.totalChefs ?? 0} verified home ${facets.data?.totalChefs === 1 ? 'chef' : 'chefs'} in ${place}`}
-                title={<>Find a home chef in <Accent>{place}</Accent></>}
+                pill={facets.isLoading ? 'Finding verified chefs' : `Verified home chefs · ${place}`}
+                title={<>Find a home chef who cooks <Accent>like ghar.</Accent></>}
                 text="Every chef here is phone-verified and approved by our team. Pick a free 2-hour slot, add groceries if you like, and pay in cash after the meal."
-                chips={[['shield', 'Phone verified & admin approved'], ['basket', 'Groceries from our city store'], ['wallet', 'Pay in cash after the meal']]}
-                photo={{ src: images.heroKarahi, alt: 'Chicken karahi cooking at home' }}
-                card={<HeroSteps title="How booking works" steps={['Pick a chef and a slot', 'Chef replies within 15 minutes', 'Pay after the meal']} />}
+                stats={[
+                    [facets.data ? facets.data.totalChefs : null, 'Verified chefs'],
+                    [facets.data ? facets.data.cuisines.length : null, 'Cuisines on offer'],
+                    [facets.data?.price?.min ? `Rs ${facets.data.price.min.toLocaleString('en-PK')}` : facets.data ? '—' : null, 'Lowest 2-hr rate']
+                ]}
+                checks={[['shield', 'Phone verified & approved'], ['basket', 'Groceries from our city store'], ['wallet', 'Cash after the meal']]}
+                photo={{ src: images.heroKarahi, alt: 'Chicken karahi cooking at home', tag: `Cooking in ${place}`, badge: ['clock', 'Chef replies within 15 minutes'], time: '2-hr slot', caption: ['Slow bhunai, desi ghee, your kitchen.', '7 slots daily'] }}
             >
                 <HeroSearch filters={filters} onApply={(next) => apply(next)} today={today} dates={dates} />
             </GreenHero>

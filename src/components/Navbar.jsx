@@ -38,7 +38,7 @@ const SearchButton = () => {
 
     return (
         <div className="relative">
-            <button type="button" onClick={() => setOpen(!open)} aria-label="Search chefs" className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-ink transition hover:border-rust/40">
+            <button type="button" onClick={() => setOpen(!open)} aria-label="Search chefs" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/85 transition hover:border-white/35 hover:bg-white/10">
                 <Icon name="search" size={15} />
             </button>
             <AnimatePresence>
@@ -133,7 +133,7 @@ const CustomerNotificationsBell = ({ user, showToast = true }) => {
     return (
         <>
             <div ref={containerRef} className="relative">
-                <button type="button" onClick={() => { setOpen((value) => !value); markAllRead() }} aria-label={`${unreadIds.length} new booking notifications`} aria-expanded={open} className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-sand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage"><Icon name="bell" size={19}/>{unreadIds.length > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-cream">{unreadIds.length > 9 ? '9+' : unreadIds.length}</span>}</button>
+                <button type="button" onClick={() => { setOpen((value) => !value); markAllRead() }} aria-label={`${unreadIds.length} new booking notifications`} aria-expanded={open} className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2E35A]"><Icon name="bell" size={19}/>{unreadIds.length > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-[#0F2A20]">{unreadIds.length > 9 ? '9+' : unreadIds.length}</span>}</button>
                 <AnimatePresence>{open && <motion.section initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} role="dialog" aria-label="Booking notifications" className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-xl border border-line bg-white shadow-lift"><div className="flex items-center justify-between border-b border-line px-4 py-3"><div><p className="font-serif text-lg font-semibold">Notifications</p><p className="text-[10px] text-muted">Chef booking updates</p></div><Link to="/my-bookings" onClick={() => setOpen(false)} className="text-[10px] font-bold text-rust hover:underline">My bookings</Link></div>{notifications.length ? <ul className="max-h-80 divide-y divide-line overflow-y-auto">{notifications.map((notification) => { const unread = unreadIds.includes(String(notification.bookingId)); return <li key={notification.bookingId}><Link to={`/my-bookings/${notification.bookingId}`} onClick={() => { markRead(notification.bookingId); setOpen(false) }} className="flex gap-3 px-4 py-3 transition hover:bg-stone-50"><span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${unread ? 'bg-sage-soft text-sage-dark' : 'bg-stone-100 text-muted'}`}><Icon name="checkCircle" size={16}/></span><span className="min-w-0 flex-1"><span className="flex items-center gap-2"><strong className="text-[11px]">Chef accepted</strong>{unread && <span className="h-1.5 w-1.5 rounded-full bg-rust"/>}</span><span className="mt-0.5 block text-[11px] text-muted">{notification.chefName} accepted your request for {notification.date} · {notification.slot}</span></span></Link></li> })}</ul> : <p className="px-4 py-8 text-center text-[12px] text-muted">When a chef accepts a booking, the update will appear here.</p>}</motion.section>}</AnimatePresence>
             </div>
             {createPortal(<AnimatePresence>{toast && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] w-[min(380px,calc(100vw-32px))] rounded-xl border border-sage/25 bg-white p-4 shadow-lift sm:right-6"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-soft text-sage-dark"><Icon name="checkCircle" size={18}/></span><div className="min-w-0 flex-1"><p className="text-[12px] font-bold">Chef accepted your booking</p><p className="mt-1 text-[11px] text-muted">{toast.chefName} · {toast.date} · {toast.slot}</p><Link to={`/my-bookings/${toast.bookingId}`} onClick={() => setToast(null)} className="mt-2 inline-flex text-[10px] font-bold text-rust hover:underline">View booking details →</Link></div><button type="button" onClick={() => setToast(null)} aria-label="Dismiss notification" className="rounded p-1 text-muted hover:bg-stone-100"><Icon name="close" size={14}/></button></div></motion.div>}</AnimatePresence>, document.body)}
@@ -150,7 +150,7 @@ const ChefBell = () => {
         refetchInterval: 15_000,
         refetchOnWindowFocus: true
     })
-    return <Link to={source.to} aria-label={`${count} ${source.label}`} title={`${count} ${source.label}`} className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-sand"><Icon name="bell" size={19}/>{count > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-cream">{count > 9 ? '9+' : count}</span>}</Link>
+    return <Link to={source.to} aria-label={`${count} ${source.label}`} title={`${count} ${source.label}`} className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10"><Icon name="bell" size={19}/>{count > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-[#0F2A20]">{count > 9 ? '9+' : count}</span>}</Link>
 }
 
 // Picks the right bell for the role. Separate components keep React's hook order stable
@@ -176,7 +176,7 @@ const AccountMenu = ({ user, logout }) => {
 
     return (
         <div ref={ref} className="relative">
-            <button type="button" onClick={() => setOpen(!open)} aria-label="Account menu" aria-expanded={open} className="flex h-9 w-9 items-center justify-center rounded-full bg-sage-dark text-[12px] font-bold text-white shadow-sm ring-2 ring-sage-soft transition hover:bg-sage">
+            <button type="button" onClick={() => setOpen(!open)} aria-label="Account menu" aria-expanded={open} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2C08F] text-[12px] font-bold text-[#17392C] shadow-sm ring-2 ring-white/15 transition hover:bg-[#F6CFA6]">
                 {initials(user.name)}
             </button>
             <AnimatePresence>
@@ -214,10 +214,10 @@ const Navbar = () => {
     useEffect(() => setOpen(false), [location.pathname])
 
     return (
-        <header className="sticky top-0 z-40 border-b border-line/70 bg-cream/90 backdrop-blur-md">
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0F2A20]/95 text-white backdrop-blur-md">
             <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-8">
                 <div className="flex items-center gap-5">
-                    <Logo />
+                    <Logo dark />
                     <div className="hidden items-center gap-2 lg:flex">
                         <CityPicker />
                         <SearchButton />
@@ -227,11 +227,11 @@ const Navbar = () => {
                 <ul className="hidden items-center gap-6 xl:gap-8 lg:flex">
                     {links.map((link) => (
                         <li key={link.to}>
-                            <NavLink to={link.to} end={link.to === '/'} className={({ isActive }) => `relative block py-2 text-[14px] transition-colors hover:text-rust ${isActive ? 'font-bold text-rust' : 'font-medium text-ink/75'}`}>
+                            <NavLink to={link.to} end={link.to === '/'} className={({ isActive }) => `relative block py-2 text-[14px] transition-colors hover:text-white ${isActive ? 'font-bold text-[#F2C08F]' : 'font-medium text-white/70'}`}>
                                 {({ isActive }) => (
                                     <>
                                         {link.label}
-                                        {isActive && <motion.span layoutId="nav-underline" className="absolute -bottom-[13px] left-0 h-[2px] w-full bg-rust" />}
+                                        {isActive && <motion.span layoutId="nav-underline" className="absolute -bottom-[13px] left-0 h-[2px] w-full bg-[#F2C08F]" />}
                                     </>
                                 )}
                             </NavLink>
@@ -241,10 +241,10 @@ const Navbar = () => {
 
                 <div className="hidden items-center gap-2 lg:flex">
                     {isLoading ? (
-                        <span className="h-10 w-40 animate-pulse rounded-lg bg-sand" />
+                        <span className="h-10 w-40 animate-pulse rounded-lg bg-white/10" />
                     ) : user ? (
                         <>
-                            <Link to={homeFor[user.role]?.to || '/'} className="rounded-lg bg-sage-soft px-4 py-2.5 text-[13px] font-bold text-sage-dark transition hover:bg-sage hover:text-white">
+                            <Link to={homeFor[user.role]?.to || '/'} className="rounded-lg bg-[#D3F0DE] px-4 py-2.5 text-[13px] font-bold text-[#17392C] transition hover:bg-[#C2E35A]">
                                 {homeFor[user.role]?.label}
                             </Link>
                             <Bell role={user.role} user={user} />
@@ -252,12 +252,12 @@ const Navbar = () => {
                         </>
                     ) : (
                         <>
-                            <Link to="/signup?role=chef" className="rounded-lg bg-sage-soft px-4 py-2.5 text-[13px] font-bold text-sage-dark transition hover:bg-sage hover:text-white">
+                            <Link to="/signup?role=chef" className="rounded-lg bg-[#D3F0DE] px-4 py-2.5 text-[13px] font-bold text-[#17392C] transition hover:bg-[#C2E35A]">
                                 Become a Chef
                             </Link>
-                            <Link to="/login" className="ml-1 flex items-center gap-2 rounded-full py-1 pl-3 pr-1 text-[13px] font-semibold text-ink transition hover:bg-sand">
+                            <Link to="/login" className="ml-1 flex items-center gap-2 rounded-full py-1 pl-3 pr-1 text-[13px] font-semibold text-white/90 transition hover:bg-white/10">
                                 Log in
-                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sage-dark text-white ring-2 ring-sage-soft">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2C08F] text-[#17392C] ring-2 ring-white/15">
                                     <Icon name="user" size={17} />
                                 </span>
                             </Link>
@@ -265,21 +265,21 @@ const Navbar = () => {
                     )}
                 </div>
 
-                <button type="button" onClick={() => setOpen(!open)} className="rounded-lg p-2 text-ink lg:hidden" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
+                <button type="button" onClick={() => setOpen(!open)} className="rounded-lg p-2 text-white lg:hidden" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
                     <Icon name={open ? 'close' : 'menu'} size={24} strokeWidth={2} />
                 </button>
             </nav>
 
             <AnimatePresence>
                 {open && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-line bg-cream lg:hidden">
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/10 bg-[#0F2A20] lg:hidden">
                         <div className="flex flex-col gap-1 px-4 py-4">
                             <div className="mb-2 flex items-center gap-2">
                                 <CityPicker />
                                 <SearchButton />
                             </div>
                             {links.map((link) => (
-                                <NavLink key={link.to} to={link.to} end={link.to === '/'} className={({ isActive }) => `rounded-lg px-3 py-2.5 font-semibold ${isActive ? 'bg-rust-soft text-rust' : 'text-ink'}`}>
+                                <NavLink key={link.to} to={link.to} end={link.to === '/'} className={({ isActive }) => `rounded-lg px-3 py-2.5 font-semibold ${isActive ? 'bg-white/10 text-[#F2C08F]' : 'text-white/85'}`}>
                                     {link.label}
                                 </NavLink>
                             ))}
@@ -287,13 +287,13 @@ const Navbar = () => {
                                 {user ? (
                                     <>
                                         {user.role === 'user' && <Bell role={user.role} user={user} showToast={false} />}
-                                        <Link to={homeFor[user.role]?.to || '/'} className="flex-1 rounded-lg bg-sage py-2.5 text-center font-semibold text-white">{homeFor[user.role]?.label}</Link>
-                                        <button type="button" onClick={() => logout()} className="flex-1 rounded-lg border border-rust py-2.5 font-semibold text-rust">Log out</button>
+                                        <Link to={homeFor[user.role]?.to || '/'} className="flex-1 rounded-lg bg-[#D3F0DE] py-2.5 text-center font-semibold text-[#17392C]">{homeFor[user.role]?.label}</Link>
+                                        <button type="button" onClick={() => logout()} className="flex-1 rounded-lg border border-white/25 py-2.5 font-semibold text-white">Log out</button>
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/signup?role=chef" className="flex-1 rounded-lg bg-sage-soft py-2.5 text-center font-semibold text-sage">Become a Chef</Link>
-                                        <Link to="/login" className="flex-1 rounded-lg bg-rust py-2.5 text-center font-semibold text-white">Login</Link>
+                                        <Link to="/signup?role=chef" className="flex-1 rounded-lg bg-[#D3F0DE] py-2.5 text-center font-semibold text-[#17392C]">Become a Chef</Link>
+                                        <Link to="/login" className="flex-1 rounded-lg bg-[#F2C08F] py-2.5 text-center font-semibold text-[#17392C]">Login</Link>
                                     </>
                                 )}
                             </div>

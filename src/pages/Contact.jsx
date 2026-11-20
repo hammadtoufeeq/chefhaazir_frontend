@@ -313,11 +313,12 @@ const Contact = ({ portal = false }) => {
     return (
         <div className="pb-20">
             <GreenHero
-                pill="We usually reply within a day"
+                pill="Rabta & concierge"
                 pulse
-                title={<>Baat <Accent>karein.</Accent></>}
+                title={<>Baat karein, <Accent>hum sun rahe hain.</Accent></>}
                 text="Planning a dawat, need help with a booking, or want to cook with us as a chef? Write to us and a real person from the Chef Haazir team will reply."
-                chips={[['calendar', 'Booking help'], ['users', 'Dawat & events'], ['chef', 'Chef partners'], ['store', 'Grocery stores']]}
+                stats={[['1 day', 'Usual reply time'], ['15 min', 'Chef reply to bookings'], ['1.5 hrs', 'Free cancel before slot']]}
+                checks={[['calendar', 'Booking help'], ['users', 'Dawat & events'], ['chef', 'Chef partners'], ['store', 'Grocery stores']]}
                 photo={{ src: images.foodTable, alt: 'Plates of home cooked food on a table' }}
                 card={
                     <>

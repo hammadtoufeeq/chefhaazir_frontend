@@ -8,7 +8,7 @@ import { useCity } from '../context/CityContext'
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import Reveal from '../components/Reveal'
-import GreenHero, { Accent, HeroSteps } from '../components/GreenHero'
+import GreenHero, { Accent } from '../components/GreenHero'
 
 const storeLink = (city) => `/grocery/${encodeURIComponent(city)}`
 
@@ -109,12 +109,12 @@ const Grocery = () => {
     return (
         <>
             <GreenHero
-                pill={isLoading ? 'Loading city stores…' : `${stores.length} city ${stores.length === 1 ? 'store' : 'stores'} open`}
-                title={<>Groceries that arrive <Accent>with your chef</Accent></>}
+                pill="Chef Haazir kiryana"
+                title={<>Groceries that arrive <Accent>with your chef.</Accent></>}
                 text="Our own store in your city packs your order once the chef accepts the booking, and delivers it to the chef’s home before your slot. The chef brings everything to your kitchen."
-                chips={[['truck', `Free delivery from Rs ${FREE_DELIVERY_FROM}`], ['lock', 'Prices locked at booking'], ['store', 'One trusted store per city']]}
-                photo={{ src: images.groceryShelves, alt: 'Shelves of fresh vegetables in a grocery store' }}
-                card={<HeroSteps title="How grocery works" steps={['Add items when you book a chef', 'Store packs once the chef accepts', 'Delivered to your chef before the slot']} />}
+                stats={[[isLoading ? null : stores.length, 'City stores open'], [`Rs ${FREE_DELIVERY_FROM}`, 'Free delivery from'], ['1', 'Approved store per city']]}
+                checks={[['lock', 'Prices locked at booking'], ['truck', 'Delivered before your slot'], ['wallet', 'Pay the chef in cash']]}
+                photo={{ src: images.groceryShelves, alt: 'Shelves of fresh vegetables in a grocery store', tag: 'Fresh every morning', badge: ['truck', 'Packed once your chef accepts'], time: 'Before your slot', caption: ['Everything your chef needs, from chakki atta to desi ghee.', ''] }}
             >
                 <div className="flex flex-col gap-3 rounded-2xl bg-white p-3 text-[#17392C] shadow-lift sm:flex-row sm:items-center">
                     <p className="flex shrink-0 items-center gap-2 px-2 text-[13px] font-bold"><Icon name="pin" size={16} className="text-[#5E8A2E]" /> Open your city store</p>

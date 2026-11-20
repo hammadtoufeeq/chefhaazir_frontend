@@ -26,11 +26,11 @@ const CityPicker = ({ onPick }) => {
                 onClick={() => setOpen(!open)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-[13px] font-medium text-ink transition hover:border-rust/40"
+                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-medium text-white/90 transition hover:border-white/35 hover:bg-white/10"
             >
-                <Icon name="pin" size={14} className="text-rust" />
+                <Icon name="pin" size={14} className="text-[#C2E35A]" />
                 {city}
-                <Icon name="chevronDown" size={14} className={`text-muted transition ${open ? 'rotate-180' : ''}`} />
+                <Icon name="chevronDown" size={14} className={`text-white/50 transition ${open ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
                 {open && (
