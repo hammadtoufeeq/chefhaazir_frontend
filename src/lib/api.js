@@ -12,7 +12,7 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const original = error.config
-        const isAuthCall = ['/auth/refresh', '/auth/login', '/auth/logout'].some((path) => original?.url?.startsWith(path))
+        const isAuthCall = ['/auth/refresh', '/auth/login', '/auth/logout'].some((path) => original?.url?.includes(path))
         if (error.response?.status === 401 && original && !original._retried && !isAuthCall) {
             original._retried = true
             try {

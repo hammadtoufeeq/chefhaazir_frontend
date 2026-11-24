@@ -46,11 +46,18 @@ const Login = () => {
 
     const submit = async (e) => {
         e.preventDefault()
+        const formEl = e.currentTarget
+        const activeEmail = (email || formEl.elements['li-email']?.value || formEl.elements['email']?.value || '').trim()
+        const activePassword = password || formEl.elements['li-password']?.value || formEl.elements['password']?.value || ''
+
+        if (activeEmail !== email) setEmail(activeEmail)
+        if (activePassword !== password) setPassword(activePassword)
+
         setTouched({ email: true, password: true })
-        if (errors.email || errors.password) return
+        if (!emailOk(activeEmail) || !activePassword) return
         setSubmitting(true)
         try {
-            const { data } = await api.post('/auth/login', { email: email.trim(), password })
+            const { data } = await api.post('/auth/login', { email: activeEmail, password: activePassword })
             await queryClient.invalidateQueries({ queryKey: ['me'] })
             toast.success(`Welcome back${data.user?.name ? `, ${data.user.name}` : ''}!`, 'Login successful')
             navigate(targetFor(data.user.role, next), { replace: true })
@@ -121,7 +128,7 @@ const Login = () => {
                                 <label htmlFor="li-email" className="text-[13px] font-bold">Email</label>
                                 <span className="relative mt-2 block">
                                     <Icon name="mail" size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-                                    <input id="li-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                                    <input id="li-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                                         autoComplete="email" autoFocus placeholder="you@example.com" className={inputCls(touched.email && errors.email)} />
                                 </span>
                                 {touched.email && errors.email && <p className="mt-1.5 text-[12px] text-rust">{errors.email}</p>}
@@ -136,7 +143,7 @@ const Login = () => {
                                 </div>
                                 <span className="relative mt-2 block">
                                     <Icon name="lock" size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-                                    <input id="li-password" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                                    <input id="li-password" name="password" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                                         autoComplete="current-password" placeholder="Your password" className={inputCls(touched.password && errors.password)} />
                                 </span>
                                 {touched.password && errors.password && <p className="mt-1.5 text-[12px] text-rust">{errors.password}</p>}
