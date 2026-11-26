@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import api, { errorMessage } from '../lib/api'
@@ -11,6 +11,7 @@ import { todayInPakistan, addDays, dateParts, slotLabel, SLOTS } from '../lib/ti
 import SafeImage from '../components/SafeImage'
 import Icon from '../components/Icon'
 import ConfirmDialog from '../components/ConfirmDialog'
+import ChefNotificationsBell from '../components/ChefNotificationsBell'
 import Contact from './Contact'
 
 const NAV = [
@@ -34,8 +35,14 @@ const statusLabels = {
     disputed: ['Under review', 'border-orange-200 bg-orange-50 text-orange-800']
 }
 const bookingFilters = [
-    ['pending', 'Pending'], ['confirmed', 'Confirmed'], ['completed', 'Completed'],
-    ['rejected', 'Declined'], ['expired', 'Expired'], ['cancelled', 'Cancelled'], ['disputed', 'Under review']
+    ['pending', 'Pending'], 
+    ['confirmed', 'Confirmed'], 
+    ['completed', 'Completed'],
+    ['cancelled_by_customer', 'Cancelled by Customer'], 
+    ['cancelled_by_chef', 'Cancelled by Chef'],
+    ['rejected', 'Declined'], 
+    ['expired', 'Expired'], 
+    ['disputed', 'Under review']
 ]
 const money = (amount) => `Rs ${Number(amount || 0).toLocaleString('en-PK')}`
 const fetchChefDashboard = async () => (await api.get('/chefs/me/dashboard')).data
@@ -199,6 +206,15 @@ const Onboarding = ({ profile, queryClient }) => {
 
 // Where the booking's groceries are: Ordered -> Packed -> On the way -> Delivered, plus the store's contact
 const GROCERY_STEPS = [['ordered', 'Ordered'], ['packed', 'Packed'], ['out_for_delivery', 'On the way'], ['delivered_to_chef', 'Delivered']]
+const GROCERY_STEP_LABELS = {
+    ordered: 'Ordered & Packing',
+    packed: 'Packed & Ready',
+    out_for_delivery: 'On the way to Chef',
+    delivered_to_chef: 'Delivered to Chef',
+    return_requested: 'Return requested',
+    return_verified: 'Return verified',
+    cancelled: 'Cancelled'
+}
 const groceryMessages = {
     ordered: 'The store has your order and is packing it.',
     packed: 'Packed at the store, leaving soon.',
@@ -208,6 +224,140 @@ const groceryMessages = {
     return_verified: 'The store received your returned groceries.',
     cancelled: 'Grocery order cancelled with the booking.'
 }
+
+const GroceryStatusModal = ({ booking, onClose }) => {
+    if (!booking) return null
+    const status = booking.groceryStatus || 'ordered'
+    const reached = GROCERY_STEPS.findIndex(([key]) => key === status)
+    const done = ['return_requested', 'return_verified'].includes(status) ? 3 : reached
+    const store = booking.groceryStore && typeof booking.groceryStore === 'object' ? booking.groceryStore : null
+    const storePhone = store?.owner?.phone
+    const digits = (storePhone || '').replace(/\D/g, '')
+    const intl = digits.startsWith('0') ? `92${digits.slice(1)}` : digits
+    const items = booking.groceryItems || []
+
+    const badgeStyle = {
+        ordered: 'border-amber-200 bg-amber-50 text-amber-800',
+        packed: 'border-blue-200 bg-blue-50 text-blue-800',
+        out_for_delivery: 'border-purple-200 bg-purple-50 text-purple-800',
+        delivered_to_chef: 'border-sage/20 bg-sage-soft text-sage-dark',
+        return_requested: 'border-orange-200 bg-orange-50 text-orange-800',
+        return_verified: 'border-stone-200 bg-stone-100 text-muted',
+        cancelled: 'border-line bg-stone-100 text-muted'
+    }[status] || 'border-line bg-stone-100 text-muted'
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-xs" onClick={onClose}>
+            <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-lift sm:p-6" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="grocery-modal-title">
+                {/* Header */}
+                <div className="flex items-start justify-between border-b border-line pb-4">
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-soft text-sage-dark">
+                            <Icon name="truck" size={20} />
+                        </span>
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-rust">Order groceries tracking</p>
+                            <h2 id="grocery-modal-title" className="font-serif text-[22px] font-semibold leading-tight">
+                                Grocery Status for {booking.customer?.name || 'Customer'}
+                            </h2>
+                            <p className="mt-0.5 text-[11px] text-muted">
+                                {dateLabel(booking.date)} · {slotLabel(booking.slot)}
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-stone-100 hover:text-ink">
+                        <Icon name="close" size={16} />
+                    </button>
+                </div>
+
+                {/* Status Hero Card */}
+                <div className="mt-4 rounded-xl border border-line bg-stone-50/70 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-muted">Current status</span>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${badgeStyle}`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {GROCERY_STEP_LABELS[status] || status}
+                        </span>
+                    </div>
+                    <p className="mt-2 text-[12px] font-medium text-ink/80">
+                        {groceryMessages[status] || 'Grocery order is being processed.'}
+                    </p>
+                </div>
+
+                {/* Step Progress Tracker */}
+                {status !== 'cancelled' && (
+                    <div className="mt-4 rounded-xl border border-line p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Delivery Progress</p>
+                        <ol className="mt-3 grid grid-cols-4 gap-1">
+                            {GROCERY_STEPS.map(([key, label], i) => (
+                                <li key={key} className="min-w-0">
+                                    <div className="flex items-center">
+                                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${i <= done ? 'bg-sage-dark text-white' : 'border border-line bg-white text-muted'}`}>
+                                            {i < done ? '✓' : i + 1}
+                                        </span>
+                                        {i < 3 && <span className={`mx-1 h-0.5 flex-1 rounded ${i < done ? 'bg-sage-dark' : 'bg-line'}`} />}
+                                    </div>
+                                    <p className={`mt-1.5 truncate text-[10px] font-semibold ${i <= done ? 'text-ink' : 'text-muted'}`}>{label}</p>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                )}
+
+                {/* Store Partner Information */}
+                {store && (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-stone-50/60 p-4 text-[12px]">
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Fulfilling Store</p>
+                            <p className="font-semibold text-ink">{store.name} <span className="font-normal text-muted">({store.city})</span></p>
+                            {storePhone && <p className="text-[11px] text-muted">Contact: {storePhone}</p>}
+                        </div>
+                        {storePhone && (
+                            <div className="flex gap-2">
+                                <a href={`tel:+${intl}`} className="inline-flex items-center gap-1 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[11px] font-bold text-ink hover:border-sage">
+                                    <Icon name="phone" size={13} /> Call
+                                </a>
+                                <a href={`https://wa.me/${intl}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[11px] font-bold text-sage-dark hover:border-sage">
+                                    <Icon name="chat" size={13} /> WhatsApp
+                                </a>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Items Breakdown */}
+                <div className="mt-4 rounded-xl border border-line p-4">
+                    <div className="flex items-center justify-between border-b border-line pb-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Ordered Items ({items.length})</p>
+                        <span className="text-[11px] font-bold text-rust">{money(booking.grocerySubtotal)}</span>
+                    </div>
+                    {items.length > 0 ? (
+                        <ul className="mt-2 divide-y divide-line/60">
+                            {items.map((item, idx) => (
+                                <li key={idx} className="flex items-center justify-between py-2 text-[11.5px]">
+                                    <span className="text-ink/80">{item.name}</span>
+                                    <span className="font-semibold text-ink">
+                                        {item.quantity} {item.unit} {item.lineTotal ? `· ${money(item.lineTotal)}` : ''}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="mt-2 text-[11px] text-muted">No itemized list found for this booking.</p>
+                    )}
+                </div>
+
+                {/* Close Button */}
+                <div className="mt-5 flex justify-end">
+                    <button type="button" onClick={onClose} className="rounded-lg bg-sage-dark px-4 py-2 text-[11px] font-bold text-white hover:bg-sage">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 const GroceryTracker = ({ booking }) => {
     const status = booking.groceryStatus
     const reached = GROCERY_STEPS.findIndex(([key]) => key === status)
@@ -244,41 +394,142 @@ const GroceryTracker = ({ booking }) => {
     )
 }
 
-const BookingCard = ({ booking, onAction, busy }) => {
+const BookingCard = ({ booking, onAction, busy, targetBookingId }) => {
+    const [showGroceryModal, setShowGroceryModal] = useState(false)
     const isPending = booking.status === 'pending'
     const canComplete = booking.status === 'confirmed' && booking.slotEnd && new Date(booking.slotEnd).getTime() <= Date.now()
     const canCancel = ['pending', 'confirmed'].includes(booking.status) && booking.slotStart && new Date(booking.slotStart).getTime() - Date.now() >= 90 * 60 * 1000
     const hasDeliveredGroceries = booking.status === 'cancelled' && booking.groceryStatus === 'delivered_to_chef'
+    const hasGroceries = (booking.groceryItems || []).length > 0 || (booking.groceryStatus && booking.groceryStatus !== 'none')
+    const isTarget = targetBookingId && targetBookingId === booking._id
+
     return (
-        <article className="rounded-xl border border-line bg-white p-4 shadow-card sm:p-5">
+        <>
+        <article id={`booking-${booking._id}`} className={`rounded-xl border bg-white p-4 shadow-card sm:p-5 transition-all ${isTarget ? 'border-rust ring-2 ring-rust/50 shadow-lift' : 'border-line'}`}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2"><h3 className="font-serif text-[20px] font-semibold">{booking.customer?.name || 'Customer'}</h3><StatusPill status={booking.status}/></div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-serif text-[20px] font-semibold">{booking.customer?.name || 'Customer'}</h3>
+                        <StatusPill status={booking.status}/>
+                        {hasGroceries && (
+                            <button
+                                type="button"
+                                onClick={() => setShowGroceryModal(true)}
+                                className="inline-flex items-center gap-1 rounded-full border border-sage/30 bg-sage-soft/70 px-2.5 py-0.5 text-[10px] font-bold text-sage-dark hover:bg-sage hover:text-white transition"
+                                title="Click to view full grocery delivery status"
+                            >
+                                <Icon name="basket" size={12}/> Groceries: {GROCERY_STEP_LABELS[booking.groceryStatus] || booking.groceryStatus}
+                            </button>
+                        )}
+                    </div>
                     <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted"><span className="inline-flex items-center gap-1"><Icon name="calendar" size={13}/>{dateLabel(booking.date)}</span><span>·</span><span>{slotLabel(booking.slot)}</span><span>·</span><span>{booking.address?.city}</span></p>
                     {booking.address?.street && <p className="mt-2 rounded-md bg-stone-50 px-3 py-2 text-[11px] text-ink/75"><Icon name="pin" size={12} className="mr-1 inline text-sage"/>{booking.address.street}</p>}
                     {booking.note && <div className="mt-2 rounded-md bg-stone-50 px-3 py-2"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Customer’s menu request</p><p className="mt-1 text-[12px] leading-relaxed text-ink/80">“{booking.note}”</p></div>}
-                    {(booking.groceryItems || []).length > 0 && <GroceryTracker booking={booking}/>}
+                    {hasGroceries && (
+                        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sage/20 bg-sage-soft/30 px-3 py-2 text-[11px]">
+                            <div className="flex items-center gap-2">
+                                <Icon name="truck" size={14} className="text-sage-dark" />
+                                <span className="font-semibold text-sage-dark">Groceries ({booking.groceryItems?.length || 0} items · {money(booking.grocerySubtotal)}):</span>
+                                <span className="font-medium text-ink/80">{GROCERY_STEP_LABELS[booking.groceryStatus] || booking.groceryStatus}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowGroceryModal(true)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-rust hover:underline"
+                            >
+                                View grocery status →
+                            </button>
+                        </div>
+                    )}
                     {booking.status === 'completed' && <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-sage/20 bg-sage-soft/40 px-3 py-2 text-[11px]"><span>Admin commission: <strong className="text-rust">{money(booking.commissionAmount)}</strong></span><span>Total payable to platform: <strong>{money(booking.payableToPlatform)}</strong></span><span>You keep from chef fee: <strong className="text-sage-dark">{money(booking.chefRate - booking.commissionAmount)}</strong></span></div>}
                 </div>
                 <div className="flex shrink-0 flex-row items-center justify-between gap-4 border-t border-line pt-3 sm:flex-col sm:items-end sm:border-0 sm:pt-0"><div className="text-left sm:text-right"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">{isPending ? 'Customer total' : 'Chef fee'}</p><p className="font-serif text-[22px] font-semibold">{money(isPending ? booking.totalFromCustomer : booking.chefRate)}</p><p className="text-[10px] text-muted">{isPending ? 'Cash after service' : '2-hour visit'}</p></div>
-                    <div className="flex flex-wrap justify-end gap-2">{isPending && <><button type="button" disabled={busy} onClick={() => onAction(booking, 'accept')} className="rounded-lg bg-sage-dark px-3 py-2 text-[11px] font-bold text-white hover:bg-sage disabled:opacity-50">Accept</button><button type="button" disabled={busy} onClick={() => onAction(booking, 'reject')} className="rounded-lg border border-rust/25 px-3 py-2 text-[11px] font-bold text-rust hover:bg-rust-soft disabled:opacity-50">Decline</button></>}{canCancel && <button type="button" disabled={busy} onClick={() => onAction(booking, 'cancel')} className="rounded-lg border border-rust/25 px-3 py-2 text-[11px] font-bold text-rust hover:bg-rust-soft disabled:opacity-50">Cancel booking</button>}{canComplete && <button type="button" disabled={busy} onClick={() => onAction(booking, 'complete')} className="rounded-lg bg-sage-dark px-3 py-2 text-[11px] font-bold text-white hover:bg-sage disabled:opacity-50">Mark completed</button>}{hasDeliveredGroceries && <button type="button" disabled={busy} onClick={() => onAction(booking, 'grocery-return')} className="rounded-lg border border-line px-3 py-2 text-[11px] font-bold hover:border-sage/50 disabled:opacity-50">Request grocery return</button>}</div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                        {hasGroceries && (
+                            <button
+                                type="button"
+                                onClick={() => setShowGroceryModal(true)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-sage/40 bg-sage-soft/60 px-3 py-2 text-[11px] font-bold text-sage-dark hover:bg-sage hover:text-white transition shadow-xs"
+                                title="Check grocery delivery status for this order"
+                            >
+                                <Icon name="truck" size={13} />
+                                Grocery Status
+                            </button>
+                        )}
+                        {isPending && <><button type="button" disabled={busy} onClick={() => onAction(booking, 'accept')} className="rounded-lg bg-sage-dark px-3 py-2 text-[11px] font-bold text-white hover:bg-sage disabled:opacity-50">Accept</button><button type="button" disabled={busy} onClick={() => onAction(booking, 'reject')} className="rounded-lg border border-rust/25 px-3 py-2 text-[11px] font-bold text-rust hover:bg-rust-soft disabled:opacity-50">Decline</button></>}{canCancel && <button type="button" disabled={busy} onClick={() => onAction(booking, 'cancel')} className="rounded-lg border border-rust/25 px-3 py-2 text-[11px] font-bold text-rust hover:bg-rust-soft disabled:opacity-50">Cancel booking</button>}{canComplete && <button type="button" disabled={busy} onClick={() => onAction(booking, 'complete')} className="rounded-lg bg-sage-dark px-3 py-2 text-[11px] font-bold text-white hover:bg-sage disabled:opacity-50">Mark completed</button>}{hasDeliveredGroceries && <button type="button" disabled={busy} onClick={() => onAction(booking, 'grocery-return')} className="rounded-lg border border-line px-3 py-2 text-[11px] font-bold hover:border-sage/50 disabled:opacity-50">Request grocery return</button>}
+                    </div>
                 </div>
             </div>
         </article>
+        {showGroceryModal && <GroceryStatusModal booking={booking} onClose={() => setShowGroceryModal(false)} />}
+        </>
     )
 }
 
 const BookingWorkspace = ({ mode, pendingCount }) => {
     const queryClient = useQueryClient()
-    const [status, setStatus] = useState(mode === 'requests' ? 'pending' : 'confirmed')
+    const [searchParams, setSearchParams] = useSearchParams()
+    
+    const targetBookingId = searchParams.get('bookingId')
+    const urlStatus = searchParams.get('status')
+    const openGrocery = searchParams.get('openGrocery') === 'true'
+    
+    const [selectedGroceryBooking, setSelectedGroceryBooking] = useState(null)
+    const [status, setStatus] = useState(urlStatus || (mode === 'requests' ? 'pending' : 'confirmed'))
     const [notice, setNotice] = useState('')
     const [confirmAction, setConfirmAction] = useState(null)
+
+    // Scroll to the specific booking when it loads
+    useEffect(() => {
+        if (!targetBookingId) return
+        const timer = setTimeout(() => {
+            const el = document.getElementById(`booking-${targetBookingId}`)
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [targetBookingId, status])
+
     const listQuery = useQuery({
         queryKey: ['chef-bookings', status],
-        queryFn: async () => (await api.get('/bookings/chef', { params: { status, page: 1, limit: 50 } })).data,
-        refetchInterval: mode === 'requests' && status === 'pending' ? 15_000 : 30_000,
+        queryFn: async () => {
+            const apiStatus = ['cancelled_by_customer', 'cancelled_by_chef'].includes(status) ? 'cancelled' : status
+            const res = await api.get('/bookings/chef', { params: { status: apiStatus, page: 1, limit: 50 } })
+            let fetchedBookings = res.data.bookings || []
+
+            if (status === 'cancelled_by_customer') {
+                fetchedBookings = fetchedBookings.filter(b => b.cancelledBy === 'user')
+            } else if (status === 'cancelled_by_chef') {
+                fetchedBookings = fetchedBookings.filter(b => b.cancelledBy === 'chef')
+            }
+
+            return { ...res.data, bookings: fetchedBookings }
+        },
+        refetchInterval: status === 'pending' ? 15_000 : 30_000,
         refetchOnWindowFocus: true
     })
+    const bookings = listQuery.data?.bookings || []
+
+    useEffect(() => {
+        if (!targetBookingId || !openGrocery) return
+        const found = bookings.find((b) => b._id === targetBookingId)
+        if (found) {
+            setSelectedGroceryBooking(found)
+        } else {
+            api.get(`/bookings/${targetBookingId}`)
+                .then((res) => { if (res.data?.booking) setSelectedGroceryBooking(res.data.booking) })
+                .catch(() => {})
+        }
+    }, [targetBookingId, openGrocery, bookings])
+
+    const closeGroceryModal = () => {
+        setSelectedGroceryBooking(null)
+        if (searchParams.get('openGrocery')) {
+            const next = new URLSearchParams(searchParams)
+            next.delete('openGrocery')
+            next.delete('bookingId')
+            setSearchParams(next, { replace: true })
+        }
+    }
     const actionMutation = useMutation({
         mutationFn: async ({ booking, action }) => {
             if (action === 'accept') return (await api.patch(`/bookings/${booking._id}/accept`)).data
@@ -304,7 +555,6 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
         'grocery-return': ['Request a grocery return?', 'The store will be asked to verify the groceries returned from this cancelled booking.', 'Request return']
     }[confirmAction.action] : null
     const label = mode === 'requests' ? 'Requests' : 'Bookings'
-    const bookings = listQuery.data?.bookings || []
 
     return (
         <>
@@ -315,9 +565,10 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
             {notice && <div role="status" className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-sage/20 bg-sage-soft px-4 py-3 text-[12px] text-sage-dark"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Dismiss"><Icon name="close" size={15}/></button></div>}
             {listQuery.isLoading ? <div className="mt-5 space-y-3">{[0,1,2].map((item) => <div key={item} className="h-32 animate-pulse rounded-xl bg-stone-100"/>)}</div>
                 : listQuery.isError ? <Panel className="mt-5 px-5 py-10 text-center"><p className="font-semibold">Bookings couldn’t be loaded</p><p className="mt-2 text-sm text-muted">{errorMessage(listQuery.error)}</p><button type="button" onClick={() => listQuery.refetch()} className="mt-4 rounded-lg bg-sage-dark px-4 py-2 text-[11px] font-bold text-white">Try again</button></Panel>
-                    : bookings.length ? <div className="mt-5 space-y-3">{bookings.map((booking) => <BookingCard key={booking._id} booking={booking} onAction={onAction} busy={actionMutation.isPending}/>)}</div>
-                        : <Panel className="mt-5 px-5 py-14 text-center"><span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100 text-muted"><Icon name={status === 'pending' ? 'bell' : 'calendar'} size={21}/></span><h2 className="mt-4 font-serif text-2xl">No {status} bookings</h2><p className="mt-2 text-[12px] text-muted">New customer requests will appear here.</p></Panel>}
+                    : bookings.length ? <div className="mt-5 space-y-3">{bookings.map((booking) => <BookingCard key={booking._id} booking={booking} onAction={onAction} busy={actionMutation.isPending} targetBookingId={targetBookingId}/>)}</div>
+                        : <Panel className="mt-5 px-5 py-14 text-center"><span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100 text-muted"><Icon name={status === 'pending' ? 'bell' : 'calendar'} size={21}/></span><h2 className="mt-4 font-serif text-2xl">No {status.replaceAll('_', ' ')} bookings</h2><p className="mt-2 text-[12px] text-muted">New customer requests will appear here.</p></Panel>}
         </div>
+        {selectedGroceryBooking && <GroceryStatusModal booking={selectedGroceryBooking} onClose={closeGroceryModal} />}
         <ConfirmDialog
             open={!!confirmAction}
             title={confirmCopy?.[0]}
@@ -330,48 +581,6 @@ const BookingWorkspace = ({ mode, pendingCount }) => {
         />
         </>
     )
-}
-
-const RequestWorkspace = ({ pendingCount }) => {
-    const queryClient = useQueryClient()
-    const [tab, setTab] = useState('pending')
-    const [notice, setNotice] = useState('')
-    const [confirmAction, setConfirmAction] = useState(null)
-    const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
-    const requests = useQuery({ queryKey: ['chef-bookings', tab], queryFn: async () => (await api.get('/bookings/chef', { params: { status: tab, page: 1, limit: 50 } })).data, refetchInterval: tab === 'pending' ? 15_000 : 30_000, refetchOnWindowFocus: true })
-    const active = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 50 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
-    const mutation = useMutation({
-        mutationFn: async ({ booking, action }) => {
-            const paths = { accept: 'accept', reject: 'reject', complete: 'complete', 'grocery-return': 'grocery-return', cancel: 'cancel' }
-            return (await api.patch(`/bookings/${booking._id}/${paths[action]}`, action === 'cancel' ? {} : undefined)).data
-        },
-        onSuccess: (data) => { setNotice(data.finances ? `${data.message}. Admin commission: ${money(data.finances.commission)}; total payable to platform: ${money(data.finances.totalDueToPlatform)}.` : data.message || 'Booking updated.'); queryClient.invalidateQueries({ queryKey: ['chef-bookings'] }); queryClient.invalidateQueries({ queryKey: ['chef-dashboard-analytics'] }); queryClient.invalidateQueries({ queryKey: ['chef-earnings'] }) },
-        onError: (error) => setNotice(errorMessage(error))
-    })
-    const actions = confirmAction ? {
-        accept: [`Accept ${confirmAction.booking.customer?.name || 'this customer'}’s request?`, 'The customer will see the booking as confirmed. Other pending requests for this same slot will be declined.', 'Accept request'],
-        reject: ['Decline this request?', 'The customer will see that you declined the booking.', 'Decline request'],
-        cancel: ['Cancel this booking?', 'The customer will be notified that the booking was cancelled.', 'Cancel booking'],
-        complete: ['Mark this booking completed?', `This makes the balance due immediately. Admin commission: ${money(confirmAction.booking.commissionAmount)}; total payable to the platform, including groceries and delivery: ${money(confirmAction.booking.payableToPlatform)}.`, 'Mark completed'],
-        'grocery-return': ['Request a grocery return?', 'The store will be asked to verify the groceries returned from this cancelled booking.', 'Request return']
-    }[confirmAction.action] : null
-    const bookings = requests.data?.bookings || []
-    const action = (booking, actionName) => setConfirmAction({ booking, action: actionName })
-    const tabs = [['pending', 'Incoming Requests', pendingCount], ['confirmed', 'Upcoming Bookings', active.data?.pagination?.total || 0], ['completed', 'Recent History', null]]
-    return <>
-        {earnings.data?.summary?.paymentBlocked && <div className="mb-6 flex flex-col gap-4 rounded-xl border border-rust/15 bg-[#f4e5da] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rust text-white"><Icon name="wallet" size={19}/></span><div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-rust">Action required · Account hold</p><h2 className="mt-1 font-serif text-[22px]">Your account is paused for an overdue commission</h2><p className="mt-1 text-[12px] text-ink/75">Platform commission of <strong>{money(earnings.data.summary.totalDue)}</strong> is pending. Clear the balance to restore request dispatch.</p></div></div><Link to="/chef/earnings" className="shrink-0 rounded-lg bg-rust px-5 py-3 text-center text-[12px] font-bold text-white hover:bg-rust-dark">View payment details</Link></div>}
-        <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-rust"><Icon name="store" size={15}/> Apna kitchen dispatch terminal</p>
-        <SectionHeading eyebrow="" title="Requests & Active Bookings" text="Review incoming requests and claim each culinary slot before its response window expires." action={<span className="rounded-full bg-rust-soft px-3 py-1.5 text-[11px] font-bold text-rust">{pendingCount} waiting</span>}/>
-        <div className="mt-5 flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl bg-stone-100 p-1">{tabs.map(([key, title, count]) => <button key={key} type="button" onClick={() => setTab(key)} className={`min-w-28 rounded-lg px-4 py-2.5 text-[11px] font-bold ${tab === key ? 'bg-white shadow-sm' : 'text-muted hover:text-ink'}`}>{title}{count !== null && <span className="ml-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px]">{count || 0}</span>}</button>)}</div>
-        {notice && <div role="status" className="mt-4 flex items-center justify-between rounded-lg border border-sage/20 bg-sage-soft px-4 py-3 text-[12px] text-sage-dark">{notice}<button type="button" onClick={() => setNotice('')} aria-label="Dismiss"><Icon name="close" size={15}/></button></div>}
-        <p className="mt-3 text-[12px] text-muted">{tab === 'pending' ? 'Review incoming culinary slots before the response window expires.' : tab === 'confirmed' ? 'Scheduled engagements with active grocery delivery pipelines.' : 'Completed and recently closed customer engagements.'}</p>
-        {requests.isLoading ? <div className="mt-4 grid gap-4 xl:grid-cols-2">{[0,1].map((x) => <div key={x} className="h-72 animate-pulse rounded-xl bg-stone-100"/>)}</div> : requests.isError ? <Panel className="mt-4 p-6 text-center"><p className="text-sm text-rust">{errorMessage(requests.error)}</p><button type="button" onClick={() => requests.refetch()} className="mt-3 text-xs font-bold underline">Try again</button></Panel> : bookings.length ? <div className={`mt-4 grid gap-4 ${tab === 'pending' ? 'xl:grid-cols-2' : ''}`}>{bookings.map((booking) => <BookingCard key={booking._id} booking={booking} onAction={action} busy={mutation.isPending}/>)}</div> : <Panel className="mt-4 px-5 py-12 text-center"><h2 className="font-serif text-2xl">No {tab} bookings</h2><p className="mt-2 text-[12px] text-muted">New customer requests will appear here.</p></Panel>}
-        {tab === 'pending' && <>
-            <div className="mt-8 flex items-end justify-between gap-3 border-t border-line pt-6"><div><h2 className="font-serif text-[23px]">Upcoming bookings</h2><p className="text-[11px] text-muted">Accepted visits and their grocery delivery status.</p></div><span className="rounded-full bg-stone-100 px-3 py-1.5 text-[10px] font-bold">{active.data?.pagination?.total || 0} active</span></div>
-            {(active.data?.bookings || []).length ? <div className="mt-3 space-y-3">{active.data.bookings.slice(0,3).map((booking) => <BookingCard key={booking._id} booking={booking} onAction={action} busy={mutation.isPending}/>)}</div> : <Panel className="mt-3 p-5 text-[12px] text-muted">Accepted bookings will appear here, with customer details and grocery delivery status.</Panel>}
-        </>}
-        <ConfirmDialog open={!!confirmAction} title={actions?.[0]} description={actions?.[1]} confirmLabel={actions?.[2]} tone={['reject','cancel'].includes(confirmAction?.action) ? 'danger' : 'sage'} busy={mutation.isPending} onCancel={() => setConfirmAction(null)} onConfirm={() => confirmAction && mutation.mutate(confirmAction, { onSettled: () => setConfirmAction(null) })}/>
-    </>
 }
 
 const Earnings = () => {
@@ -498,6 +707,7 @@ const KitchenTimings = ({ profile }) => {
 }
 
 const LiveChefOverview = ({ profile, pendingCount }) => {
+    const [selectedGroceryBooking, setSelectedGroceryBooking] = useState(null)
     const confirmed = useQuery({ queryKey: ['chef-bookings', 'confirmed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'confirmed', page: 1, limit: 5 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
     const completed = useQuery({ queryKey: ['chef-bookings', 'completed'], queryFn: async () => (await api.get('/bookings/chef', { params: { status: 'completed', page: 1, limit: 1 } })).data, refetchInterval: 30_000, refetchOnWindowFocus: true })
     const earnings = useQuery({ queryKey: ['chef-earnings'], queryFn: async () => (await api.get('/chefs/me/earnings')).data, refetchInterval: 30_000 })
@@ -506,14 +716,40 @@ const LiveChefOverview = ({ profile, pendingCount }) => {
     const activeBookings = confirmed.data?.bookings || []
     return <div className="space-y-7">
         {earnings.data?.summary?.paymentBlocked && <div className="flex flex-col gap-4 rounded-xl border border-rust/15 bg-[#f4e5da] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rust text-white"><Icon name="wallet" size={19}/></span><div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-rust">Action required · Account hold</p><h2 className="mt-1 font-serif text-[21px]">Your account is paused for an overdue commission</h2><p className="mt-1 text-[12px] text-ink/75">Platform commission of <strong>{money(earnings.data.summary.totalDue)}</strong> is pending.</p></div></div><Link to="/chef/earnings" className="shrink-0 rounded-lg bg-rust px-5 py-3 text-center text-[12px] font-bold text-white">View earnings</Link></div>}
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-rust"><Icon name="store" size={14}/> Chef Haazir · Partner Kitchen</p><h1 className="mt-2 font-serif text-[34px] font-semibold leading-tight sm:text-[42px]">{profile.name} <span className="text-rust">Kitchen</span></h1><p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted"><Icon name="pin" size={13}/>{profile.city} <span>·</span><span>{profile.cuisines?.join(' · ') || 'Home chef'}</span><span>·</span><span className="font-semibold text-sage-dark">Verified chef · accepting requests</span></p></div><div className="flex gap-1 rounded-xl bg-stone-100 p-1"><Link to="/chef" className="rounded-lg bg-white px-4 py-2 text-[11px] font-bold text-rust shadow-sm">Overview</Link><Link to="/chef/requests" className="rounded-lg px-4 py-2 text-[11px] font-semibold">Requests <span className="ml-1 rounded-full bg-rust px-1.5 py-0.5 text-[9px] text-white">{pendingCount}</span></Link><Link to="/chef/bookings" className="rounded-lg px-4 py-2 text-[11px] font-semibold">Bookings</Link></div></div>
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-rust"><Icon name="store" size={14}/> Chef Haazir · Partner Kitchen</p><h1 className="mt-2 font-serif text-[34px] font-semibold leading-tight sm:text-[42px]">{profile.name} <span className="text-rust">Kitchen</span></h1><p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted"><Icon name="pin" size={13}/>{profile.city} <span>·</span><span>{profile.cuisines?.join(' · ') || 'Home chef'}</span><span>·</span><span className="font-semibold text-sage-dark">Verified chef · accepting requests</span></p></div><div className="flex gap-1 rounded-xl bg-stone-100 p-1"><Link to="/chef" className="rounded-lg bg-white px-4 py-2 text-[11px] font-bold text-rust shadow-sm">Overview</Link><Link to="/chef/bookings?status=pending" className="rounded-lg px-4 py-2 text-[11px] font-semibold">Requests <span className="ml-1 rounded-full bg-rust px-1.5 py-0.5 text-[9px] text-white">{pendingCount}</span></Link><Link to="/chef/bookings" className="rounded-lg px-4 py-2 text-[11px] font-semibold">Bookings</Link></div></div>
         <Panel className="flex flex-col gap-4 border-sage/20 bg-sage-soft/35 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage-dark text-white"><Icon name="checkCircle" size={20}/></span><div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-sage-dark">Kitchen verification complete</p><h2 className="mt-1 font-serif text-xl">Your chef profile is live</h2><p className="mt-1 text-[11px] text-muted">Customers can find your kitchen and send booking requests. New requests update here automatically.</p></div></div><Link to="/chef/profile" className="shrink-0 rounded-lg border border-line bg-white px-4 py-2.5 text-[11px] font-bold">Manage profile</Link></Panel>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">New requests</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{pendingCount}</p><Icon name="bell" size={20} className="text-rust"/></div><Link to="/chef/requests" className="mt-2 inline-block text-[10px] font-bold text-rust">Review requests →</Link></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Active bookings</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{confirmed.data?.pagination?.total ?? '—'}</p><Icon name="calendar" size={20} className="text-sage"/></div><Link to="/chef/bookings" className="mt-2 inline-block text-[10px] font-bold text-rust">View schedule →</Link></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Completed visits</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{completed.data?.pagination?.total ?? '—'}</p><Icon name="checkCircle" size={20} className="text-sage"/></div><span className="mt-2 inline-block text-[10px] text-muted">Since joining Chef Haazir</span></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Commission due</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[27px] font-semibold">{earnings.data ? money(earnings.data.summary.totalDue) : '—'}</p><Icon name="wallet" size={20} className="text-rust"/></div><Link to="/chef/earnings" className="mt-2 inline-block text-[10px] font-bold text-rust">Earnings details →</Link></Panel></div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">New requests</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{pendingCount}</p><Icon name="bell" size={20} className="text-rust"/></div><Link to="/chef/bookings?status=pending" className="mt-2 inline-block text-[10px] font-bold text-rust">Review requests →</Link></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Active bookings</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{confirmed.data?.pagination?.total ?? '—'}</p><Icon name="calendar" size={20} className="text-sage"/></div><Link to="/chef/bookings" className="mt-2 inline-block text-[10px] font-bold text-rust">View schedule →</Link></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Completed visits</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[30px] font-semibold">{completed.data?.pagination?.total ?? '—'}</p><Icon name="checkCircle" size={20} className="text-sage"/></div><span className="mt-2 inline-block text-[10px] text-muted">Since joining Chef Haazir</span></Panel><Panel className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Commission due</p><div className="mt-3 flex items-end justify-between"><p className="font-serif text-[27px] font-semibold">{earnings.data ? money(earnings.data.summary.totalDue) : '—'}</p><Icon name="wallet" size={20} className="text-rust"/></div><Link to="/chef/earnings" className="mt-2 inline-block text-[10px] font-bold text-rust">Earnings details →</Link></Panel></div>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
             <Panel className="overflow-hidden"><div className="grid sm:grid-cols-[42%_1fr]"><SafeImage src={chefPhoto(profile)} alt={`${profile.name} cuisine`} className="h-64 sm:h-full"/><div className="p-5"><p className="text-[9px] font-bold uppercase tracking-wide text-rust">Your kitchen</p><h2 className="mt-1 font-serif text-[25px]">{profile.name}</h2><p className="mt-2 text-[12px] leading-relaxed text-muted">{profile.city} · serving local homes with {profile.cuisines?.join(', ') || 'home cooked meals'}.</p><blockquote className="mt-4 rounded-lg bg-stone-50 p-3 font-serif text-[14px] italic leading-relaxed text-ink/75">{profile.bio || 'Add a short introduction to tell customers about your cooking.'}</blockquote><Link to="/chef/profile" className="mt-4 inline-flex text-[11px] font-bold text-rust">Edit profile details →</Link></div></div></Panel>
             <section><div className="flex items-end justify-between gap-3"><div><p className="text-[9px] font-bold uppercase tracking-wide text-rust">Local grocery supply</p><h2 className="font-serif text-[24px]">Pantry picks in {profile.city}</h2><p className="text-[11px] text-muted">Items customers can add to a chef booking.</p></div><Link to={`/grocery/${encodeURIComponent(profile.city || '')}`} className="shrink-0 text-[10px] font-bold text-rust">Browse store →</Link></div>{grocery.isLoading ? <div className="mt-3 grid gap-3 sm:grid-cols-2">{[0,1,2,3].map((x)=><div key={x} className="h-24 animate-pulse rounded-xl bg-stone-100"/>)}</div> : items.length ? <div className="mt-3 grid gap-3 sm:grid-cols-2">{items.map((item) => <Panel key={item._id} className="flex min-w-0 items-center gap-3 p-3"><SafeImage src={images.spices} alt={item.name} className="h-16 w-16 shrink-0 rounded-lg"/><div className="min-w-0"><p className="truncate text-[9px] font-bold uppercase text-rust">{item.category}</p><p className="truncate text-[12px] font-semibold">{item.name}</p><p className="mt-1 text-[11px] font-bold text-sage-dark">{money(item.price)} / {item.unit}</p></div></Panel>)}</div> : <Panel className="mt-3 p-5 text-[11px] text-muted">No approved grocery store is serving {profile.city} yet. Customers can still book you without groceries.</Panel>}</section>
         </div>
-        <section><div className="flex items-end justify-between gap-3"><div><h2 className="font-serif text-[25px]">Your upcoming kitchen bookings</h2><p className="text-[11px] text-muted">Confirmed visits and grocery delivery status.</p></div><Link to="/chef/bookings" className="text-[11px] font-bold text-rust">All bookings →</Link></div>{confirmed.isLoading ? <div className="mt-3 h-28 animate-pulse rounded-xl bg-stone-100"/> : activeBookings.length ? <div className="mt-3 grid gap-3 lg:grid-cols-2">{activeBookings.slice(0,4).map((booking) => <article key={booking._id} className="rounded-xl border border-line bg-white p-4 shadow-card"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-serif text-lg font-semibold">{booking.customer?.name || 'Customer'}</h3><StatusPill status={booking.status}/></div><p className="mt-1 text-[11px] text-muted">{dateLabel(booking.date)} · {slotLabel(booking.slot)} · {booking.address?.city}</p>{booking.note && <p className="mt-3 rounded-lg bg-stone-50 p-3 font-serif text-[13px] italic">{booking.note}</p>}<p className="mt-3 text-[10px] text-muted">Groceries: {booking.groceryStatus?.replaceAll('_', ' ') || 'not selected'}</p></article>)}</div> : <Panel className="mt-3 p-5 text-[12px] text-muted">No confirmed bookings yet. New requests will appear in your Requests tab.</Panel>}</section>
+        <section><div className="flex items-end justify-between gap-3"><div><h2 className="font-serif text-[25px]">Your upcoming kitchen bookings</h2><p className="text-[11px] text-muted">Confirmed visits and grocery delivery status.</p></div><Link to="/chef/bookings" className="text-[11px] font-bold text-rust">All bookings →</Link></div>{confirmed.isLoading ? <div className="mt-3 h-28 animate-pulse rounded-xl bg-stone-100"/> : activeBookings.length ? <div className="mt-3 grid gap-3 lg:grid-cols-2">{activeBookings.slice(0,4).map((booking) => {
+            const hasGroceries = (booking.groceryItems || []).length > 0 || (booking.groceryStatus && booking.groceryStatus !== 'none')
+            return (
+                <article key={booking._id} className="rounded-xl border border-line bg-white p-4 shadow-card">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-serif text-lg font-semibold">{booking.customer?.name || 'Customer'}</h3>
+                        <StatusPill status={booking.status}/>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted">{dateLabel(booking.date)} · {slotLabel(booking.slot)} · {booking.address?.city}</p>
+                    {booking.note && <p className="mt-3 rounded-lg bg-stone-50 p-3 font-serif text-[13px] italic">{booking.note}</p>}
+                    <div className="mt-3 flex items-center justify-between border-t border-line/60 pt-2.5">
+                        <p className="text-[11px] text-muted">Groceries: <strong className="text-ink">{GROCERY_STEP_LABELS[booking.groceryStatus] || booking.groceryStatus?.replaceAll('_', ' ') || 'none'}</strong></p>
+                        {hasGroceries && (
+                            <button
+                                type="button"
+                                onClick={() => setSelectedGroceryBooking(booking)}
+                                className="inline-flex items-center gap-1 rounded-md border border-sage/40 bg-sage-soft/70 px-2.5 py-1 text-[10.5px] font-bold text-sage-dark hover:bg-sage hover:text-white transition"
+                            >
+                                <Icon name="truck" size={12}/> Grocery Status
+                            </button>
+                        )}
+                    </div>
+                </article>
+            )
+        })}</div> : <Panel className="mt-3 p-5 text-[12px] text-muted">No confirmed bookings yet. New requests will appear in your Requests tab.</Panel>}
+        {selectedGroceryBooking && <GroceryStatusModal booking={selectedGroceryBooking} onClose={() => setSelectedGroceryBooking(null)} />}
+        </section>
         <div className="flex flex-col gap-4 rounded-xl bg-stone-100 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-serif text-xl">Need help with your kitchen?</h2><p className="mt-1 text-[11px] text-muted">Your partner support team is ready to help.</p></div><Link to="/contact" className="rounded-lg bg-sage-dark px-4 py-2.5 text-center text-[11px] font-bold text-white">Contact partner support</Link></div>
     </div>
 }
@@ -566,7 +802,7 @@ const Overview = ({ profile, queryClient, pendingCount, navigate }) => profile.a
         <p className="mt-2 max-w-2xl font-serif text-[15px] leading-relaxed text-ink/75">Welcome to your Chef Haazir Kitchen Portal. Complete your verification steps to activate your culinary profile and start receiving booking requests.</p>
         <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
             <Onboarding profile={profile} queryClient={queryClient}/>
-            <aside className="space-y-3"><div className="flex items-center justify-between gap-2"><h2 className="flex items-center gap-2 font-serif text-[17px]"><Icon name="eye" size={16}/> Customer view preview</h2><span className="rounded-full bg-rust-soft px-2.5 py-1 text-[9px] font-bold text-rust">{profile.approvalStatus === 'approved' ? 'Live' : 'Draft'}</span></div><p className="text-[11px] leading-relaxed text-muted">This is how your kitchen profile will appear to customers looking for a home chef.</p><ChefPreview profile={profile}/><div className="rounded-xl border border-line bg-stone-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Requests waiting</p><p className="mt-1 font-serif text-[25px] font-semibold">{pendingCount}</p><button type="button" onClick={() => navigate('/chef/requests')} className="mt-2 text-[11px] font-bold text-rust underline">Review requests</button></div></aside>
+            <aside className="space-y-3"><div className="flex items-center justify-between gap-2"><h2 className="flex items-center gap-2 font-serif text-[17px]"><Icon name="eye" size={16}/> Customer view preview</h2><span className="rounded-full bg-rust-soft px-2.5 py-1 text-[9px] font-bold text-rust">{profile.approvalStatus === 'approved' ? 'Live' : 'Draft'}</span></div><p className="text-[11px] leading-relaxed text-muted">This is how your kitchen profile will appear to customers looking for a home chef.</p><ChefPreview profile={profile}/><div className="rounded-xl border border-line bg-stone-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-muted">Requests waiting</p><p className="mt-1 font-serif text-[25px] font-semibold">{pendingCount}</p><button type="button" onClick={() => navigate('/chef/bookings?status=pending')} className="mt-2 text-[11px] font-bold text-rust underline">Review requests</button></div></aside>
         </div>
         <div className="mt-7 flex flex-col gap-4 rounded-xl bg-stone-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sage-dark text-white"><Icon name="chat" size={20}/></span><div><h2 className="font-serif text-[19px]">Need help setting up your kitchen?</h2><p className="mt-1 text-[11px] text-muted">Our partner team can help with verification, contracts and your profile.</p></div></div><Link to="/chef/contact" className="inline-flex items-center justify-center gap-2 rounded-lg bg-sage-dark px-4 py-2.5 text-[11px] font-bold text-white hover:bg-sage"><Icon name="chat" size={14}/> Contact partner support</Link></div>
     </div>
@@ -587,32 +823,33 @@ const ChefDashboard = () => {
     if (!user) return <Navigate to="/login?next=%2Fchef" replace/>
     if (user.role !== 'chef') return <Navigate to={user.role === 'user' ? '/my-bookings' : '/'} replace/>
 
-    const page = current === 'requests' ? <RequestWorkspace pendingCount={pendingQuery.data || 0}/> : current === 'bookings' ? <BookingWorkspace mode="bookings" pendingCount={pendingQuery.data || 0}/> : current === 'earnings' ? <Earnings/> : current === 'profile' ? profile && <ProfileEditor profile={profile} queryClient={queryClient}/> : current === 'timings' ? profile && <KitchenTimings profile={profile}/> : current === 'contact' ? <Contact portal/> : profile && <Overview profile={profile} queryClient={queryClient} pendingCount={pendingQuery.data || 0} navigate={navigate}/>
+    const page = current === 'bookings' ? <BookingWorkspace mode="bookings" pendingCount={pendingQuery.data || 0}/> : current === 'earnings' ? <Earnings/> : current === 'profile' ? profile && <ProfileEditor profile={profile} queryClient={queryClient}/> : current === 'timings' ? profile && <KitchenTimings profile={profile}/> : current === 'contact' ? <Contact portal/> : profile && <Overview profile={profile} queryClient={queryClient} pendingCount={pendingQuery.data || 0} navigate={navigate}/>
 
     return (
         <div className="min-h-screen bg-[#fbfaf8] text-ink">
             <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur-md">
                 <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between gap-3 px-4 lg:px-7">
-                    <Link to="/chef" className="flex min-w-[205px] flex-col border-r border-line pr-5 leading-none"><span className="font-serif text-[22px] font-semibold tracking-tight text-rust">skillet <span className="text-ink">Chef Haazir</span></span><span className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted">Chef portal / Apna kitchen</span></Link>
-                    <div className="hidden items-center gap-5 xl:flex">{TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `text-[11px] font-semibold ${isActive ? 'text-rust' : 'text-ink/70 hover:text-ink'}`}>{item.label}</NavLink>)}</div>
-                    <div className="flex items-center gap-2 sm:gap-3"><span className={`hidden rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide sm:inline-flex ${profile?.approvalStatus === 'approved' ? 'bg-sage-soft text-sage-dark' : 'bg-orange-100 text-rust'}`}>{profile?.approvalStatus === 'approved' ? 'Approved chef' : 'Account under setup'}</span><Link to="/chef/contact" aria-label="Help and Concierge" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sage-dark px-2.5 text-[10px] font-bold text-white shadow-sm transition hover:bg-sage focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 sm:px-3"><Icon name="chat" size={14}/><span className="hidden sm:inline">Help &amp; Concierge</span></Link><Link to="/chef/requests" aria-label={`${pendingQuery.data || 0} requests`} className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-stone-100"><Icon name="bell" size={17}/>{pendingQuery.data > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rust ring-2 ring-white"/>}</Link><div className="hidden text-right sm:block"><p className="max-w-28 truncate text-[10px] font-bold">{profile?.name || user.name}</p><p className="text-[9px] text-muted">Partner chef</p></div><button type="button" onClick={() => { logout(); navigate('/') }} aria-label="Log out" className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15}/></button></div>
+                    <Link to="/chef" className="flex min-w-[205px] flex-col border-r border-line pr-5 leading-none"><span className="font-serif text-[22px] font-semibold tracking-tight text-rust">skillet <span className="text-ink">Chef Haazir</span></span><span className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted">Chef portal / apna kitchen</span></Link>
+                    <nav aria-label="Chef top navigation" className="hidden items-center gap-6 text-[13px] font-semibold sm:flex">
+                        {TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `transition ${isActive ? 'text-rust' : 'text-ink/65 hover:text-ink'}`}>{item.label}</NavLink>)}
+                    </nav>
+                    <div className="flex items-center gap-2">
+                        {profile?.approvalStatus === 'approved' && <span className="hidden rounded-full bg-sage-soft px-3 py-1.5 text-[9px] font-bold text-sage-dark md:block">APPROVED CHEF</span>}
+                        <Link to="/chef/contact" className="hidden items-center gap-2 rounded-lg bg-sage-dark px-3 py-2 text-[11px] font-bold text-white hover:bg-sage md:flex"><Icon name="chat" size={13}/> Help &amp; Concierge</Link>
+                        <ChefNotificationsBell user={user}/>
+                        <div className="hidden items-center gap-2 border-l border-line pl-2 text-right sm:flex"><div><p className="text-[11px] font-bold">{profile?.name || user.name}</p><p className="text-[9px] text-muted">Partner chef</p></div><button type="button" onClick={logout} aria-label="Log out" className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-muted hover:bg-rust-soft hover:text-rust"><Icon name="logout" size={15}/></button></div>
+                    </div>
                 </div>
-                <div className="flex gap-1 overflow-x-auto border-t border-line px-3 py-2 lg:hidden">{TOP_NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => `shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold ${isActive ? 'bg-sage-dark text-white' : 'text-muted hover:bg-stone-100'}`}>{item.label}</NavLink>)}</div>
             </header>
-
-            <div className="mx-auto grid min-h-[calc(100vh-68px)] max-w-[1600px] lg:grid-cols-[218px_minmax(0,1fr)]">
-                <aside className="hidden border-r border-line bg-[#f6f4f0] px-3 py-6 lg:flex lg:flex-col">
-                    <p className="flex items-center gap-2 px-3 text-[10px] font-semibold text-ink/75"><Icon name="pin" size={13} className="text-rust"/>{profile?.city || 'Your city'} kitchen hub</p>
-                    <p className="mb-2 mt-8 px-3 text-[9px] font-bold uppercase tracking-[0.14em] text-muted">Workspace menu</p>
-                    <nav className="space-y-1">{NAV.map((item) => <PortalNavLink key={item.to} {...item} count={0}/>)}</nav>
-                    <div className="mt-auto space-y-4"><div className="rounded-lg bg-white px-3 py-3"><p className="flex items-center gap-2 text-[10px] font-bold text-muted"><Icon name="shield" size={13} className="text-sage"/> Profile verification</p><p className="mt-1 text-[10px]">{profile?.phoneVerified ? 'Phone verified' : 'In progress'}</p><div className="my-2 h-px bg-line"/><p className="flex items-center gap-2 text-[10px] font-bold text-muted"><Icon name="store" size={13} className="text-sage"/> Kitchen hub</p><p className="mt-1 text-[10px]">{profile?.city || 'Loading city'}</p></div><button type="button" onClick={() => { logout(); navigate('/') }} className="flex items-center gap-2 px-3 text-[11px] font-semibold text-muted hover:text-rust"><Icon name="logout" size={15}/> Log out</button></div>
+            <div className="mx-auto flex max-w-[1600px]">
+                <aside className="hidden w-[240px] shrink-0 border-r border-line bg-white px-4 py-6 lg:block">
+                    <p className="mb-2 flex items-center gap-2 px-3 text-[9px] font-bold uppercase tracking-[0.14em] text-muted"><Icon name="pin" size={13}/> {profile?.city || 'Your city'} kitchen hub</p>
+                    <p className="mb-3 px-3 text-[8px] font-bold uppercase tracking-[0.16em] text-muted/70">Workspace menu</p>
+                    <nav aria-label="Chef dashboard" className="space-y-1">{NAV.map((item) => <PortalNavLink key={item.to} {...item} count={item.to === '/chef/bookings' ? pendingQuery.data : undefined}/>)}</nav>
+                    <div className="mt-6 rounded-xl border border-line bg-stone-50 p-4"><p className="text-[9px] font-bold uppercase tracking-wide text-muted">Commission rate</p><p className="mt-1 font-serif text-[22px] font-semibold">10%</p><p className="mt-1 text-[10px] leading-relaxed text-muted">Platform commission is charged on completed bookings only. Groceries and delivery are billed at cost.</p></div>
                 </aside>
-
-                <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
-                    {profileQuery.isLoading ? <div className="mx-auto max-w-6xl space-y-4"><div className="h-10 w-72 animate-pulse rounded bg-stone-100"/><div className="h-[520px] animate-pulse rounded-xl bg-stone-100"/></div>
-                        : profileQuery.isError ? <div className="mx-auto max-w-xl rounded-xl border border-line bg-white p-8 text-center"><h1 className="font-serif text-2xl">Chef profile unavailable</h1><p className="mt-2 text-[12px] text-muted">{errorMessage(profileQuery.error)}</p><button type="button" onClick={() => profileQuery.refetch()} className="mt-4 rounded-lg bg-sage-dark px-4 py-2 text-[11px] font-bold text-white">Try again</button></div>
-                            : <div className="mx-auto max-w-6xl">{page}</div>}
-                    <footer className="mx-auto mt-9 flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-line py-4 text-[9px] text-muted"><span>© {new Date().getFullYear()} Chef Haazir · Lahore, Pakistan</span><div className="flex flex-wrap gap-4"><Link to="/about#chef-contract" className="hover:text-rust">Chef partner code</Link><Link to="/about" className="hover:text-rust">Food hygiene standards</Link><Link to="/contact" className="hover:text-rust">Support desk</Link></div></footer>
+                <main className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
+                    {page}
                 </main>
             </div>
         </div>

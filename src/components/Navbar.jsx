@@ -20,13 +20,36 @@ const links = [
 const initials = (name = '') => name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
 
 // Search icon that opens a small name search, sending the visitor to /chefs?search=
+// Search icon that opens a small name search, sending the visitor to /chefs?search=
 const SearchButton = () => {
     const [open, setOpen] = useState(false)
     const [term, setTerm] = useState('')
+    const [coords, setCoords] = useState({ top: 0, left: 0 })
     const navigate = useNavigate()
     const inputRef = useRef(null)
+    const buttonRef = useRef(null)
+    const formRef = useRef(null)
 
     useEffect(() => { if (open) inputRef.current?.focus() }, [open])
+
+    const handleOpen = () => {
+        if (buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect()
+            setCoords({ top: rect.bottom + 8, left: rect.left })
+        }
+        setOpen(!open)
+    }
+
+    useEffect(() => {
+        if (!open) return
+        const close = (e) => {
+            if (!buttonRef.current?.contains(e.target) && !formRef.current?.contains(e.target)) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', close)
+        return () => document.removeEventListener('mousedown', close)
+    }, [open])
 
     const submit = (e) => {
         e.preventDefault()
@@ -37,32 +60,37 @@ const SearchButton = () => {
     }
 
     return (
-        <div className="relative">
-            <button type="button" onClick={() => setOpen(!open)} aria-label="Search chefs" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/85 transition hover:border-white/35 hover:bg-white/10">
+        <div ref={buttonRef} className="relative">
+            <button type="button" onClick={handleOpen} aria-label="Search chefs" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/85 transition hover:border-white/35 hover:bg-white/10">
                 <Icon name="search" size={15} />
             </button>
-            <AnimatePresence>
-                {open && (
-                    <motion.form
-                        onSubmit={submit}
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute left-0 top-full z-50 mt-2 flex w-72 items-center gap-2 rounded-2xl border border-line bg-white p-2 shadow-lift"
-                    >
-                        <input
-                            ref={inputRef}
-                            value={term}
-                            onChange={(e) => setTerm(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-                            placeholder="Search a chef by name"
-                            className="min-w-0 flex-1 rounded-lg bg-sand px-3 py-2 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-sage/30"
-                        />
-                        <button className="rounded-lg bg-sage px-3 py-2 text-sm font-semibold text-white">Go</button>
-                    </motion.form>
-                )}
-            </AnimatePresence>
+            {createPortal(
+                <AnimatePresence>
+                    {open && (
+                        <motion.form
+                            ref={formRef}
+                            onSubmit={submit}
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.15 }}
+                            style={{ top: coords.top, left: coords.left }}
+                            className="fixed z-[100] flex w-72 items-center gap-2 rounded-2xl border border-line bg-white p-2 shadow-lift"
+                        >
+                            <input
+                                ref={inputRef}
+                                value={term}
+                                onChange={(e) => setTerm(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+                                placeholder="Search a chef by name"
+                                className="min-w-0 flex-1 rounded-lg bg-sand px-3 py-2 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-sage/30"
+                            />
+                            <button className="rounded-lg bg-sage px-3 py-2 text-sm font-semibold text-white">Go</button>
+                        </motion.form>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     )
 }
@@ -134,30 +162,20 @@ const CustomerNotificationsBell = ({ user, showToast = true }) => {
         <>
             <div ref={containerRef} className="relative">
                 <button type="button" onClick={() => { setOpen((value) => !value); markAllRead() }} aria-label={`${unreadIds.length} new booking notifications`} aria-expanded={open} className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2E35A]"><Icon name="bell" size={19}/>{unreadIds.length > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-[#0F2A20]">{unreadIds.length > 9 ? '9+' : unreadIds.length}</span>}</button>
-                <AnimatePresence>{open && <motion.section initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} role="dialog" aria-label="Booking notifications" className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-xl border border-line bg-white shadow-lift"><div className="flex items-center justify-between border-b border-line px-4 py-3"><div><p className="font-serif text-lg font-semibold">Notifications</p><p className="text-[10px] text-muted">Chef booking updates</p></div><Link to="/my-bookings" onClick={() => setOpen(false)} className="text-[10px] font-bold text-rust hover:underline">My bookings</Link></div>{notifications.length ? <ul className="max-h-80 divide-y divide-line overflow-y-auto">{notifications.map((notification) => { const unread = unreadIds.includes(String(notification.bookingId)); return <li key={notification.bookingId}><Link to={`/my-bookings/${notification.bookingId}`} onClick={() => { markRead(notification.bookingId); setOpen(false) }} className="flex gap-3 px-4 py-3 transition hover:bg-stone-50"><span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${unread ? 'bg-sage-soft text-sage-dark' : 'bg-stone-100 text-muted'}`}><Icon name="checkCircle" size={16}/></span><span className="min-w-0 flex-1"><span className="flex items-center gap-2"><strong className="text-[11px]">Chef accepted</strong>{unread && <span className="h-1.5 w-1.5 rounded-full bg-rust"/>}</span><span className="mt-0.5 block text-[11px] text-muted">{notification.chefName} accepted your request for {notification.date} · {notification.slot}</span></span></Link></li> })}</ul> : <p className="px-4 py-8 text-center text-[12px] text-muted">When a chef accepts a booking, the update will appear here.</p>}</motion.section>}</AnimatePresence>
+                <AnimatePresence>{open && <motion.section initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} role="dialog" aria-label="Booking notifications" className="absolute right-0 top-full z-50 mt-2 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-xl border border-line bg-white shadow-lift"><div className="flex items-center justify-between border-b border-line px-4 py-3"><div><p className="font-serif text-lg font-semibold">Notifications</p><p className="text-[10px] text-muted">Chef booking updates</p></div><Link to="/my-bookings" onClick={() => setOpen(false)} className="text-[10px] font-bold text-rust hover:underline">My bookings</Link></div>{notifications.length ? <ul className="max-h-80 divide-y divide-line overflow-y-auto">{notifications.map((notification) => { const unread = unreadIds.includes(String(notification.bookingId)); const isCancelled = notification.bookingStatus === 'cancelled'; return <li key={notification.bookingId}><Link to={`/my-bookings/${notification.bookingId}`} onClick={() => { markRead(notification.bookingId); setOpen(false) }} className="flex gap-3 px-4 py-3 transition hover:bg-stone-50"><span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isCancelled ? 'bg-rust-soft text-rust' : unread ? 'bg-sage-soft text-sage-dark' : 'bg-stone-100 text-muted'}`}><Icon name={isCancelled ? 'xCircle' : 'checkCircle'} size={16}/></span><span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><strong className={`text-[11px] ${isCancelled ? 'text-rust' : 'text-ink'}`}>{notification.title || (isCancelled ? 'Chef cancelled' : 'Chef accepted')}</strong>{unread && <span className="h-1.5 w-1.5 rounded-full bg-rust"/>}</span><span className="mt-0.5 block text-[11px] text-muted">{notification.message || `${notification.chefName} ${isCancelled ? 'cancelled' : 'accepted'} your booking for ${notification.date} · ${notification.slot}`}</span></span></Link></li> })}</ul> : <p className="px-4 py-8 text-center text-[12px] text-muted">When a chef accepts or cancels a booking, updates will appear here.</p>}</motion.section>}</AnimatePresence>
             </div>
-            {createPortal(<AnimatePresence>{toast && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] w-[min(380px,calc(100vw-32px))] rounded-xl border border-sage/25 bg-white p-4 shadow-lift sm:right-6"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-soft text-sage-dark"><Icon name="checkCircle" size={18}/></span><div className="min-w-0 flex-1"><p className="text-[12px] font-bold">Chef accepted your booking</p><p className="mt-1 text-[11px] text-muted">{toast.chefName} · {toast.date} · {toast.slot}</p><Link to={`/my-bookings/${toast.bookingId}`} onClick={() => setToast(null)} className="mt-2 inline-flex text-[10px] font-bold text-rust hover:underline">View booking details →</Link></div><button type="button" onClick={() => setToast(null)} aria-label="Dismiss notification" className="rounded p-1 text-muted hover:bg-stone-100"><Icon name="close" size={14}/></button></div></motion.div>}</AnimatePresence>, document.body)}
+            {createPortal(<AnimatePresence>{toast && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] w-[min(380px,calc(100vw-32px))] rounded-xl border border-line bg-white p-4 shadow-lift sm:right-6"><div className="flex items-start gap-3"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${toast.bookingStatus === 'cancelled' ? 'bg-rust-soft text-rust' : 'bg-sage-soft text-sage-dark'}`}><Icon name={toast.bookingStatus === 'cancelled' ? 'xCircle' : 'checkCircle'} size={18}/></span><div className="min-w-0 flex-1"><p className={`text-[12px] font-bold ${toast.bookingStatus === 'cancelled' ? 'text-rust' : 'text-ink'}`}>{toast.title || (toast.bookingStatus === 'cancelled' ? 'Chef cancelled your booking' : 'Chef accepted your booking')}</p><p className="mt-1 text-[11px] text-muted">{toast.message || `${toast.chefName} · ${toast.date} · ${toast.slot}`}</p><Link to={`/my-bookings/${toast.bookingId}`} onClick={() => setToast(null)} className="mt-2 inline-flex text-[10px] font-bold text-rust hover:underline">View booking details →</Link></div><button type="button" onClick={() => setToast(null)} aria-label="Dismiss notification" className="rounded p-1 text-muted hover:bg-stone-100"><Icon name="close" size={14}/></button></div></motion.div>}</AnimatePresence>, document.body)}
         </>
     )
 }
 
-// Chef bell: booking requests waiting for the chef.
-const ChefBell = () => {
-    const source = { url: '/bookings/chef', to: '/chef', label: 'new booking requests' }
-    const { data: count = 0 } = useQuery({
-        queryKey: ['pending-count', 'chef'],
-        queryFn: async () => (await api.get(source.url, { params: { status: 'pending', limit: 1 } })).data.pagination?.total ?? 0,
-        refetchInterval: 15_000,
-        refetchOnWindowFocus: true
-    })
-    return <Link to={source.to} aria-label={`${count} ${source.label}`} title={`${count} ${source.label}`} className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10"><Icon name="bell" size={19}/>{count > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rust px-1 text-[9px] font-bold text-white ring-2 ring-[#0F2A20]">{count > 9 ? '9+' : count}</span>}</Link>
-}
+import ChefNotificationsBell from './ChefNotificationsBell'
 
 // Picks the right bell for the role. Separate components keep React's hook order stable
 // when the user logs in or out.
 const Bell = ({ role, user, showToast }) => {
     if (role === 'user') return <CustomerNotificationsBell user={user} showToast={showToast} />
-    if (role === 'chef') return <ChefBell />
+    if (role === 'chef') return <ChefNotificationsBell user={user} showToast={showToast} dark={true} />
     return null
 }
 
@@ -286,7 +304,7 @@ const Navbar = () => {
                             <div className="mt-3 flex gap-3">
                                 {user ? (
                                     <>
-                                        {user.role === 'user' && <Bell role={user.role} user={user} showToast={false} />}
+                                        {(user.role === 'user' || user.role === 'chef') && <Bell role={user.role} user={user} showToast={false} />}
                                         <Link to={homeFor[user.role]?.to || '/'} className="flex-1 rounded-lg bg-[#D3F0DE] py-2.5 text-center font-semibold text-[#17392C]">{homeFor[user.role]?.label}</Link>
                                         <button type="button" onClick={() => logout()} className="flex-1 rounded-lg border border-white/25 py-2.5 font-semibold text-white">Log out</button>
                                     </>
